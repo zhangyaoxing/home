@@ -1,0 +1,40 @@
+/*
+Pallete colors
+#032820
+#80A416
+#C5C764
+#08852C
+#AD9F3C
+#5E7343
+*/
+#layout {
+    layout: horizontal;
+    background: #032820;
+}
+
+#schedule {
+    width: 25%;
+    height: 100%;
+    border: double #80A416;
+}
+
+#message {
+    width: 75%;
+    overflow: hidden;
+    height: 100%;
+    border: double #80A416;
+    padding: 1 1 0 1;
+}
+
+.lag {
+    color: #AD9F3C;
+    text-style: bold;
+}
+
+.normal {
+    color: gray;
+}
+
+Rule {
+    margin: 0
+}

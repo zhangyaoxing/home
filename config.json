@@ -1,0 +1,31 @@
+{
+    "apiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
+    "myStationCode": "Sod",
+    "logLevel": "INFO",
+    "message": {
+        "updateIntervalMin": 5,
+        "scrollSpeed": 0.1,
+        "margin": 50
+    },
+    "apiFreqControl": [{
+        "from": 0,
+        "to": 7,
+        "intervalMin": 30
+    }, {
+        "from": 7,
+        "to": 9,
+        "intervalMin": 2
+    }, {
+        "from": 9,
+        "to": 17,
+        "intervalMin": 10
+    }, {
+        "from": 17,
+        "to": 19,
+        "intervalMin": 2
+    }, {
+        "from": 19,
+        "to": 24,
+        "intervalMin": 10
+    }]
+}
