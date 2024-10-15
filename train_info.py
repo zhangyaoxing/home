@@ -1,7 +1,7 @@
 from textual.app import App
 from textual.containers import ScrollableContainer
 from textual.widgets import *
-from lib.traffic_api import *
+from libs.traffic_api import *
 from textual.css._style_properties import OffsetProperty
 from datetime import datetime
 import pytz
