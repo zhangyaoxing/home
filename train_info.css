@@ -13,7 +13,7 @@ Pallete colors
 }
 
 #schedule {
-    width: 25%;
+    width: 35%;
     height: 100%;
     border: double #80A416;
     overflow: hidden;
@@ -26,7 +26,7 @@ Pallete colors
 }
 
 #message {
-    width: 75%;
+    width: 65%;
     overflow: hidden;
     height: 100%;
     border: double #80A416;
@@ -34,7 +34,7 @@ Pallete colors
 }
 
 .lag {
-    color: #AD9F3C;
+    color: #80A416;
     text-style: bold;
 }
 
