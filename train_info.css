@@ -16,6 +16,13 @@ Pallete colors
     width: 25%;
     height: 100%;
     border: double #80A416;
+    overflow: hidden;
+}
+
+#current_station {
+    text-style: bold;
+    color: #08852C;
+    margin: 1 0 0 0;
 }
 
 #message {
@@ -37,4 +44,8 @@ Pallete colors
 
 Rule {
     margin: 0
+}
+
+TrainScheduleTable {
+    overflow: hidden;
 }
