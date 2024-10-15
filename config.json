@@ -1,7 +1,7 @@
 {
     "apiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
     "myStationCode": "Sod",
-    "logLevel": "INFO",
+    "logLevel": "ERROR",
     "message": {
         "updateIntervalMin": 5,
         "scrollSpeed": 0.1,
