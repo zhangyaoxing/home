@@ -1,0 +1,391 @@
+{
+	"RESPONSE": {
+		"RESULT": [
+			{
+				"TrainStationMessage": [
+					{
+						"Id": "1500adde-1d5d-5837-08dc-dfbe396fb105",
+						"MediaType": "Plattformsskylt",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-06T23:00:00.000+02:00",
+						"EndDateTime": "2024-10-11T05:01:38.686+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Linje 43 är inställd Stockholm City–Farsta \nstrand kl. 00:00-05:00. Se sl.se eller \nmonitor.",
+						"Status": "Lag",
+						"VersionNumber": 2,
+						"ActiveDays": "yyyyyy",
+						"PlatformSignAttributes": {
+							"CommuterPlatformSign": true,
+							"TrackList": {
+								"Track": [
+									"2"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T03:01:39.418Z"
+					},
+					{
+						"Id": "1500adde-1d5d-5837-08dc-dfbe396fb11f",
+						"MediaType": "Monitor",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-06T23:00:00.000+02:00",
+						"EndDateTime": "2024-10-11T05:01:38.686+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Linje 43 är inställd mellan Stockholm City \noch Farsta strand dagligen kl. 00:00-05:00 \nnätterna mot 7-11 oktober p.g.a. banarbete. \nResenärer mot Västerhaninge/Nynäshamn \nhänvisas till tunnelbanan från T-Centralen \ntill Farsta strand. Sök din resa på sl.se \neller i SL-appen.\nLine 43 is suspended between Stockholm City \nand Farsta strand daily between 00:00-05:00 \non the nights of October 7-11 due to track \nwork. Passengers traveling towards \nVästerhaninge / Nynäshamn are refered to the \nMetro from T-Centralen to Farsta strand. Plan \nyour journey at sl.se or in the app.",
+						"Status": "Lag",
+						"VersionNumber": 2,
+						"ActiveDays": "yyyyyy",
+						"MonitorAttributes": {
+							"CommuterMonitor": true,
+							"BigScreenMonitorActivated": false
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T03:01:39.623Z"
+					},
+					{
+						"Id": "1500adde-be5d-9e53-08dc-e3892aedd448",
+						"MediaType": "Plattformsskylt",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-06T23:50:00.000+02:00",
+						"EndDateTime": "2024-10-18T04:50:00.000+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Linje 40 stannar ej vid Arlanda C nätter mot \nvardagar p.g.a. banarbete. Se sl.se.",
+						"Status": "Lag",
+						"VersionNumber": 1,
+						"ActiveDays": "yyyyyynyyyyyy",
+						"PlatformSignAttributes": {
+							"CommuterPlatformSign": true,
+							"TrackList": {
+								"Track": [
+									"1"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-03T08:55:45.422Z"
+					},
+					{
+						"Id": "1500adde-be5d-9e53-08dc-e3892aedd47a",
+						"MediaType": "Monitor",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-06T23:50:00.000+02:00",
+						"EndDateTime": "2024-10-18T04:50:00.000+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Pendeltåg linje 40 stannar inte vid Arlanda C \nvardagsnätter kl. 23:55 - 04:55 från natt mot \n7 oktober till natt mot 18 oktober. Detta \nberor på banarbete. Tågen stannar istället \nvid Märsta och Rosersberg. Sök din resa till \noch från Arlanda C på sl.se eller i SL-appen.\n\nCommuter rail services on line 40 will not \nstop at Arlanda C on weekday nights 23:55-\n04:55, from the night of October 7 to the \nnight of October 18. This is due to track \nwork. The trains will instead stop at \nRosersberg and Märsta. Plan your journey to \nand from Arlanda at sl.se or in the SL app.",
+						"Status": "Lag",
+						"VersionNumber": 1,
+						"ActiveDays": "yyyyyynyyyyyy",
+						"MonitorAttributes": {
+							"CommuterMonitor": true,
+							"BigScreenMonitorActivated": false
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-03T08:55:45.657Z"
+					},
+					{
+						"Id": "1500adde-1c5d-6223-08dc-e8212f114702",
+						"MediaType": "Plattformsskylt",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-14T00:00:00.000+02:00",
+						"EndDateTime": "2024-10-18T04:45:00.000+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Buss ersätter mellan Södertälje C - \nSödertälje hamn kl. 00:45-04:45. Se sl.se.",
+						"Status": "Lag",
+						"VersionNumber": 2,
+						"ActiveDays": "yyyyy",
+						"PlatformSignAttributes": {
+							"CommuterPlatformSign": true,
+							"TrackList": {
+								"Track": [
+									"2"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-09T06:13:35.504Z"
+					},
+					{
+						"Id": "1500adde-1c5d-6223-08dc-e8212f11471e",
+						"MediaType": "Monitor",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-14T00:00:00.000+02:00",
+						"EndDateTime": "2024-10-18T04:45:00.000+02:00",
+						"SplitActivationTime": true,
+						"FreeText": "Buss ersätter pendeltågen på linje 40 och 41 \nmellan Södertälje centrum och Södertälje hamn \nunder natt och tidig morgon kl. 00:45-04:45 \nden 14-18 oktober på grund av banarbete.\n\nSök din resa och läs mer på sl.se eller i \nappen.\nBuses will replace the Commuter rail services \non line 40 and 41 between Södertälje centrum \nand Södertälje hamn during the night and \nearly morning 00:45-04:45 on October 14-18 \ndue to track work.\n\nPlan your journey at sl.se or in the SL app.",
+						"Status": "Lag",
+						"VersionNumber": 2,
+						"ActiveDays": "yyyyy",
+						"MonitorAttributes": {
+							"CommuterMonitor": true,
+							"BigScreenMonitorActivated": false
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-09T06:13:35.728Z"
+					},
+					{
+						"Id": "1500adde-8f5d-419e-08dc-e9a31caf6d6c",
+						"MediaType": "Plattformsskylt",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-11T05:12:00.000+02:00",
+						"EndDateTime": "2024-10-11T09:01:04.277+02:00",
+						"SplitActivationTime": false,
+						"FreeText": "Stopp mellan Farsta strand och Årstaberg \nsedan kl. 05:00. Se sl.se för eventuella \nalternativa resvägar.",
+						"Status": "Normal",
+						"VersionNumber": 4,
+						"ActiveDays": "y",
+						"PlatformSignAttributes": {
+							"CommuterPlatformSign": true,
+							"TrackList": {
+								"Track": [
+									"1",
+									"2"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T07:01:04.926Z"
+					},
+					{
+						"Id": "1500adde-8f5d-419e-08dc-e9a31caf6d94",
+						"MediaType": "Monitor",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-11T05:12:00.000+02:00",
+						"EndDateTime": "2024-10-11T09:01:04.277+02:00",
+						"SplitActivationTime": false,
+						"FreeText": "Stopp i trafiken mellan Farsta strand och \nÅrstaberg sedan kl. 05:00 p.g.a. banarbete. \nSe sl.se för eventuella alternativa resvägar. \nPrognos saknas för när trafiken kan vara \nigång.",
+						"Status": "Normal",
+						"VersionNumber": 4,
+						"ActiveDays": "y",
+						"MonitorAttributes": {
+							"CommuterMonitor": true,
+							"BigScreenMonitorActivated": false
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T07:01:05.145Z"
+					},
+					{
+						"Id": "1500adde-8f5d-419e-08dc-e9a31caf6dbc",
+						"MediaType": "Utrop",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-11T05:12:00.000+02:00",
+						"EndDateTime": "2024-10-11T09:01:04.277+02:00",
+						"SplitActivationTime": false,
+						"FreeText": "Det är stopp i trafiken mellan Farsta strand, och Årstaberg, sedan klockan 05:00, på grund av banarbete. Se sl.se, för eventuella, alternativa, resvägar. Prognos saknas för när trafiken, kan vara igång igen. ",
+						"Status": "Hog",
+						"VersionNumber": 4,
+						"ActiveDays": "y",
+						"PublicAnnouncementAttributes": {
+							"EnglishPublicAnnouncementActivated": false,
+							"PublicAnnouncementPlanList": {
+								"PublicAnnouncementPlan": [
+									{
+										"ValidFrom": "2024-10-11T05:12:00.000+02:00",
+										"ValidTo": "2024-10-11T23:59:00.000+02:00",
+										"ActiveDays": "y",
+										"PublicAnnouncementOccasionList": {
+											"PublicAnnouncementOccasion": [
+												312,
+												319,
+												326,
+												333,
+												340,
+												347,
+												354,
+												361,
+												368,
+												375,
+												382,
+												389,
+												396,
+												403,
+												410,
+												417,
+												424,
+												431,
+												438,
+												445,
+												452,
+												459,
+												466,
+												473,
+												480,
+												487,
+												494,
+												501,
+												508,
+												515,
+												522,
+												529,
+												536,
+												543,
+												550,
+												557,
+												564,
+												571,
+												578,
+												585,
+												592,
+												599,
+												606,
+												613,
+												620,
+												627,
+												634,
+												641,
+												648,
+												655,
+												662,
+												669,
+												676,
+												683,
+												690,
+												697,
+												704,
+												711,
+												718,
+												725,
+												732,
+												739,
+												746,
+												753,
+												760,
+												767,
+												774,
+												781,
+												788,
+												795,
+												802,
+												809,
+												816,
+												823,
+												830,
+												837,
+												844,
+												851,
+												858,
+												865,
+												872,
+												879,
+												886,
+												893,
+												900,
+												907,
+												914,
+												921,
+												928,
+												935,
+												942,
+												949,
+												956,
+												963,
+												970,
+												977,
+												984,
+												991,
+												998,
+												1005,
+												1012,
+												1019,
+												1026,
+												1033,
+												1040,
+												1047,
+												1054,
+												1061,
+												1068,
+												1075,
+												1082,
+												1089,
+												1096,
+												1103,
+												1110,
+												1117,
+												1124,
+												1131,
+												1138,
+												1145,
+												1152,
+												1159,
+												1166,
+												1173,
+												1180,
+												1187,
+												1194,
+												1201,
+												1208,
+												1215,
+												1222,
+												1229,
+												1236,
+												1243,
+												1250,
+												1257,
+												1264,
+												1271,
+												1278,
+												1285,
+												1292,
+												1299,
+												1306,
+												1313,
+												1320,
+												1327,
+												1334,
+												1341,
+												1348,
+												1355,
+												1362,
+												1369,
+												1376,
+												1383,
+												1390,
+												1397,
+												1404,
+												1411,
+												1418,
+												1425,
+												1432,
+												1439
+											]
+										}
+									}
+								]
+							},
+							"PublicAnnouncementZoneList": {
+								"PublicAnnouncementZone": [
+									"Sod"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T07:01:05.379Z"
+					},
+					{
+						"Id": "1500adde-1c5d-6223-08dc-e9a5e302d16d",
+						"MediaType": "Plattformsskylt",
+						"LocationCode": "Sod",
+						"StartDateTime": "2024-10-11T05:32:00.000+02:00",
+						"EndDateTime": "2024-10-11T09:00:58.000+02:00",
+						"SplitActivationTime": false,
+						"FreeText": "Stopp förbi Arlanda sedan kl. 05:00. Se sl.se \nför eventuella alternativa resvägar.",
+						"Status": "Normal",
+						"VersionNumber": 3,
+						"ActiveDays": "y",
+						"PlatformSignAttributes": {
+							"CommuterPlatformSign": true,
+							"TrackList": {
+								"Track": [
+									"1",
+									"2"
+								]
+							}
+						},
+						"Deleted": false,
+						"ModifiedTime": "2024-10-11T07:00:58.805Z"
+					}
+				]
+			}
+		]
+	}
+}
