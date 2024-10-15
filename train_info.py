@@ -80,7 +80,7 @@ class TrainScheduleTable(DataTable):
             from_station = "/".join([self.stations[loc] for loc in row["FromLocation"]])
             if now > time:
                 # Train left
-                delta = (now - time).seconds
+                delta = (now - time).total_seconds()
                 to_station = "/".join(self.stations[loc] for loc in row["ToLocation"])
                 line = "{f} :arrow_right: {t}".format(f=from_station, t=to_station)
                 # Make the left train gray
@@ -89,7 +89,7 @@ class TrainScheduleTable(DataTable):
                 departure_time = "[#808080]{min}m ago[/#808080]".format(min=int(delta / 60))
             else:
                 # Train arriving
-                delta = (time - now).seconds
+                delta = (time - now).total_seconds()
                 to_station = "/".join(["[bold][#08852C]{loc}[/#08852C][/bold]".format(loc=self.stations[loc]) for loc in row["ToLocation"]])
                 line = "{f} :arrow_right: {t}".format(f=from_station, t=to_station)
                 departure_time = "{min} min".format(min=int(delta / 60))
@@ -112,12 +112,14 @@ class TrainSchedule(Static):
             for json in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
                 self.stations[json["LocationSignature"]] = json["AdvertisedLocationName"]
             logger.debug("Stations loaded: {stations}".format(stations=self.stations))
+            current_station = Label("{s}".format(s=self.stations[config["myStationCode"]]), id="current_station")
+            self.mount(current_station)
     def load_schedule(self):
         now = datetime.now()
         hour = now.hour
         cfg = [cfg for cfg in config["apiFreqControl"] if hour >= cfg["from"] and hour < cfg["to"]][0]
         interval = cfg["intervalMin"]
-        delta = (now - self.last_refresh).seconds / 60
+        delta = (now - self.last_refresh).total_seconds() / 60
         if delta < interval:
             logger.info("Waiting for the next round to refresh.")
             return
@@ -126,15 +128,16 @@ class TrainSchedule(Static):
             logger.error("Can't access API to get train stations.")
             return
         else:
-            self.remove_children()
             schedules = schedule_json["RESPONSE"]["RESULT"][0]["TrainAnnouncement"]
             table = TrainScheduleTable(schedules, self.stations)
             table.add_columns(*("Line", "Track", "Time"))
+            if self.last_refresh != datetime.min:
+                self.query_one(TrainScheduleTable).remove()
             self.mount(table)
             self.set_loading(False)
-        self.last_refresh = now
+            self.last_refresh = now
     def on_mount(self):
-        self.border_title = "Train Schedule (Odenplan)"
+        self.border_title = "Train Schedule"
         self.set_loading(True)
         self.load_stations()
         self.load_schedule()
