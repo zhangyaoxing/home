@@ -90,7 +90,7 @@ class TrainScheduleTable(DataTable):
             else:
                 # Train arriving
                 delta = (time - now).total_seconds()
-                to_station = "/".join(["[bold][#08852C]{loc}[/#08852C][/bold]".format(loc=self.stations[loc]) for loc in row["ToLocation"]])
+                to_station = "/".join(["[bold][green]{loc}[/green][/bold]".format(loc=self.stations[loc]) for loc in row["ToLocation"]])
                 line = "{f} :arrow_right: {t}".format(f=from_station, t=to_station)
                 departure_time = "{min} min".format(min=int(delta / 60))
             self.add_row(line, track, departure_time)

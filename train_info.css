@@ -1,40 +1,30 @@
-/*
-Pallete colors
-#032820
-#80A416
-#C5C764
-#08852C
-#AD9F3C
-#5E7343
-*/
 #layout {
     layout: horizontal;
-    background: #032820;
 }
 
 #schedule {
-    width: 40%;
+    width: 30%;
     height: 100%;
-    border: double #80A416;
+    border: double greenyellow;
     overflow: hidden;
 }
 
 #current_station {
     text-style: bold;
-    color: #08852C;
+    color: green;
     margin: 1 0 0 1;
 }
 
 #message {
-    width: 60%;
+    width: 70%;
     overflow: hidden;
     height: 100%;
-    border: double #80A416;
+    border: double greenyellow;
     padding: 1 1 0 1;
 }
 
 .lag {
-    color: #80A416;
+    color: yellow;
     text-style: bold;
 }
 
