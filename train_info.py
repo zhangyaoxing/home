@@ -112,7 +112,8 @@ class TrainSchedule(Static):
             for json in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
                 self.stations[json["LocationSignature"]] = json["AdvertisedLocationName"]
             logger.debug("Stations loaded: {stations}".format(stations=self.stations))
-            current_station = Label("{s}".format(s=self.stations[config["myStationCode"]]), id="current_station")
+            current_station = self.query_one("#current_station")
+            current_station.update("{s}".format(s=self.stations[config["myStationCode"]]))
             self.mount(current_station)
     def load_schedule(self):
         now = datetime.now()
@@ -144,7 +145,8 @@ class TrainSchedule(Static):
         # Refresh stations on a daily basis.
         self.set_interval(86400, self.load_stations)
         self.set_interval(60, self.load_schedule)
-        # TODO: periodically load new schedule
+    def compose(self):
+        yield Label("Loading...", id="current_station")
 
 class TrainInfoApp(App):
     BINDINGS = [
