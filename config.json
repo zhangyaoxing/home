@@ -29,5 +29,6 @@
         "to": 24,
         "intervalMin": 10
     }],
-    "stationUpdateInterval": 86400
+    "stationUpdateInterval": 86400,
+    "title": "Yaoxing's Sweet Home"
 }

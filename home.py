@@ -151,6 +151,9 @@ class TrainInfoApp(App):
     ]
     CSS_PATH = "train_info.css"
 
+    def on_mount(self):
+        self.title = config["title"]
+
     def compose(self):
         yield Header(show_clock=True)
         with ScrollableContainer(id="layout"):
