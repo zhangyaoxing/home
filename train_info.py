@@ -24,12 +24,12 @@ class MessageLabel(Label):
         self.set_interval(config["message"]["scrollSpeed"], self.scroll)
 
 class TrainStationMessage(Static):
+    last_refresh = datetime.min
     def load_message(self):
+        if is_freq_throttled(self.last_refresh):
+            return
         lag_message = []
         normal_message = []
-        # lag_message.append({
-        #     "FreeText": "Tågtrafiken är åter igång efter tidigare \nstopp mellan Farsta Strand och Årstaberg.\nFörseningar kvarstår, se respektive \navgång.Inställda avgångar kan förekomma."
-        # })
         error, messages_json = api_train_message()
         if error != None:
             logger.error("Can't access API to get train messages.")
@@ -51,6 +51,7 @@ class TrainStationMessage(Static):
             self.mount(MessageLabel(normalized_message, classes="normal"))
             self.mount(Rule())
         self.set_loading(False)
+        self.last_refresh = datetime.now()
 
     def get_visible_size(self):
         return self.content_size
@@ -58,7 +59,7 @@ class TrainStationMessage(Static):
         self.border_title = "Train Notice"
         self.set_loading(True)
         self.load_message()
-        self.set_interval(config["message"]["updateIntervalMin"] * 60, self.load_message)
+        self.set_interval(config["apiFreqCheck"], self.load_message)
     def refresh_message(self):
         self.load_message()
 
@@ -98,7 +99,7 @@ class TrainScheduleTable(DataTable):
     def on_mount(self):
         self.cursor_type = "none"
         self.refresh_data()
-        self.set_interval(60, self.refresh_data)
+        self.set_interval(config["apiFreqCheck"], self.refresh_data)
 
 class TrainSchedule(Static):
     stations = {}
@@ -116,13 +117,7 @@ class TrainSchedule(Static):
             current_station.update("{s}".format(s=self.stations[config["myStationCode"]]))
             self.mount(current_station)
     def load_schedule(self):
-        now = datetime.now()
-        hour = now.hour
-        cfg = [cfg for cfg in config["apiFreqControl"] if hour >= cfg["from"] and hour < cfg["to"]][0]
-        interval = cfg["intervalMin"]
-        delta = (now - self.last_refresh).total_seconds() / 60
-        if delta < interval:
-            logger.info("Waiting for the next round to refresh.")
+        if is_freq_throttled(self.last_refresh):
             return
         error, schedule_json = api_train_announcement()
         if error != None:
@@ -136,15 +131,15 @@ class TrainSchedule(Static):
                 self.query_one(TrainScheduleTable).remove()
             self.mount(table)
             self.set_loading(False)
-            self.last_refresh = now
+            self.last_refresh = datetime.now()
     def on_mount(self):
         self.border_title = "Train Schedule"
         self.set_loading(True)
         self.load_stations()
         self.load_schedule()
         # Refresh stations on a daily basis.
-        self.set_interval(86400, self.load_stations)
-        self.set_interval(60, self.load_schedule)
+        self.set_interval(config["stationUpdateInterval"], self.load_stations)
+        self.set_interval(config["apiFreqCheck"], self.load_schedule)
     def compose(self):
         yield Label("Loading...", id="current_station")
 

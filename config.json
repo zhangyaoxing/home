@@ -1,5 +1,5 @@
 {
-    "apiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
+    "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
     "myStationCode": "Sod",
     "logLevel": "ERROR",
     "message": {
@@ -7,6 +7,7 @@
         "scrollSpeed": 0.1,
         "margin": 50
     },
+    "apiFreqCheck": 60,
     "apiFreqControl": [{
         "from": 0,
         "to": 7,
@@ -27,5 +28,6 @@
         "from": 19,
         "to": 24,
         "intervalMin": 10
-    }]
+    }],
+    "stationUpdateInterval": 86400
 }

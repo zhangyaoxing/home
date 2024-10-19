@@ -1,12 +1,25 @@
 import requests
 import logging
 from libs.utils import load_config
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 config = load_config()
 
 # TODO: Make the request async.
-url = config["apiUrl"]
+url = config["trainApiUrl"]
+
+# Check whether the call to API is throttled.
+# True: Yes (Shouldn't call API)
+# False: No (You can call API)
+def is_freq_throttled(last_call_time):
+    now = datetime.now()
+    hour = now.hour
+    cfg = [cfg for cfg in config["apiFreqControl"] if hour >= cfg["from"] and hour < cfg["to"]][0]
+    interval = cfg["intervalMin"]
+    delta = (now - last_call_time).total_seconds() / 60
+    return delta < interval
+
 def api_request(body):
     headers = {'Content-Type': 'application/xml'}
     request_xml = "<REQUEST><LOGIN authenticationkey='{key}'/>{body}</REQUEST>".format(key=config["authenticationkey"], body=body)
