@@ -32,6 +32,5 @@ For security reasons, keys are not saved in the `config.json`. I suggest you can
 
 ## Run
 ```bash
-source ./my_keys.sh
-./home.py
+./entrance
 ```
