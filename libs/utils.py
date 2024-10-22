@@ -29,9 +29,13 @@ def get_script_path(filename = None):
 
 config_path = get_script_path("config.json")
 config = json.load(open(config_path))
-config["authenticationkey"] = config.get("authenticationkey", os.environ.get("authenticationkey", None))
-if config["authenticationkey"] == None:
-    print(yellow("authenticationkey key is not configured."))
+config["trainKey"] = config.get("trainKey", os.environ.get("trainKey", None))
+config["weatherKey"] = config.get("weatherKey", os.environ.get("weatherKey", None))
+if config["trainKey"] == None:
+    print(yellow("Train API key is not configured."))
+    exit()
+if config["weatherKey"] == None:
+    print(yellow("Weather API key is not configured."))
     exit()
 
 def load_config():

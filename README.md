@@ -27,3 +27,11 @@ Config settings can be found in `/config.json`.
     |Total: 212/day|||
 - `stationUpdateInterval`: Because the stations doesn't change easily. We only update the station list once a day.
 - `title`: The title showing on top of the screen.
+
+For security reasons, keys are not saved in the `config.json`. I suggest you can fill them in  `my_keys.sh`. Remember, never push the key to Github.
+
+## Run
+```bash
+source ./my_keys.sh
+./home.py
+```

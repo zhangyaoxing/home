@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from textual.app import App
 from textual.containers import ScrollableContainer
 from textual.widgets import *

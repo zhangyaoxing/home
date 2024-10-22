@@ -1,7 +1,8 @@
 {
     "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
+    "weatherApiUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm?unitGroup=metric&key={key}&contentType=json",
     "myStationCode": "Sod",
-    "logLevel": "ERROR",
+    "logLevel": "FATAL",
     "message": {
         "updateIntervalMin": 5,
         "scrollSpeed": 0.1,
