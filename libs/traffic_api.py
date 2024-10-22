@@ -22,7 +22,7 @@ def is_freq_throttled(last_call_time):
 
 def api_request(body):
     headers = {'Content-Type': 'application/xml'}
-    request_xml = "<REQUEST><LOGIN authenticationkey='{key}'/>{body}</REQUEST>".format(key=config["authenticationkey"], body=body)
+    request_xml = "<REQUEST><LOGIN authenticationkey='{key}'/>{body}</REQUEST>".format(key=config["trainKey"], body=body)
     try:
         result = requests.post(url, data=request_xml, headers=headers)
         code = result.status_code

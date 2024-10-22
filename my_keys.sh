@@ -1,0 +1,2 @@
+export trainKey=""
+export weatherKey=""
