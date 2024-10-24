@@ -1,6 +1,6 @@
 {
     "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
-    "weatherApiUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm?unitGroup=metric&key={key}&contentType=json",
+    "weatherApiUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm?unitGroup=metric&elements=datetime%2CdatetimeEpoch%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslike%2Chumidity%2Csnow%2Csnowdepth%2Cwindgust%2Cwindspeed%2Cwinddir%2Ccloudcover%2Cuvindex%2Csevererisk%2Csunrise%2Csunset%2Cmoonphase%2Cconditions%2Cdescription&include=days%2Calerts%2Ccurrent%2Cevents&key={key}&options=nonulls&contentType=json",
     "myStationCode": "Sod",
     "logLevel": "FATAL",
     "message": {
@@ -31,5 +31,6 @@
         "intervalMin": 10
     }],
     "stationUpdateInterval": 86400,
+    "weatherRefreshInterval": 300,
     "title": "Yaoxing's Sweet Home"
 }

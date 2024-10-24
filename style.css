@@ -1,5 +1,13 @@
-#layout {
+#train_layout {
     layout: horizontal;
+    height: 50%;
+}
+
+#weather_layout {
+    layout: horizontal;
+    border: double greenyellow;
+    height: 50%;
+    width: 50%;
 }
 
 #schedule {
@@ -38,4 +46,25 @@ Rule {
 
 TrainScheduleTable {
     overflow: hidden;
+}
+
+#weather_today {
+    layout: vertical;
+    border-right: solid greenyellow;
+    width: 50%;
+    height: 100%;
+}
+
+WeatherElement {
+    width: 100%;
+    layout: horizontal;
+    padding: 0;
+    margin: 0;
+}
+
+WeatherElement Label.label {
+    color: gray;
+}
+WeatherElement Label.text {
+    color: white;
 }
