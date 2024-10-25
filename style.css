@@ -5,9 +5,8 @@
 
 #weather_layout {
     layout: horizontal;
-    border: double greenyellow;
     height: 50%;
-    width: 50%;
+    width: 100%;
 }
 
 #schedule {
@@ -50,11 +49,27 @@ TrainScheduleTable {
 
 #weather_today {
     layout: vertical;
-    border-right: solid greenyellow;
-    width: 50%;
+    border: solid greenyellow;
+    width: 30%;
     height: 100%;
 }
 
+#weather_next {
+    border: solid greenyellow;
+    width: 70%;
+    height: 100%;
+}
+
+#weather_next .forecast {
+    width: 100%;
+}
+
+Weather {
+    layout: horizontal;
+    width: 100%;
+    height: 100%;
+    border: double greenyellow;
+}
 WeatherElement {
     width: 100%;
     layout: horizontal;

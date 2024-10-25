@@ -25,15 +25,26 @@ class WeatherElement(Label):
     def text(self, value):
         self._text.update(value)
 
+def winddir(angle):
+    if angle < 22.5 or angle >= 337.5: return "↓"
+    if angle >= 22.5 and angle < 67.5: return "↙️"
+    if angle >= 67.5 and angle < 112.5: return "←"
+    if angle >= 112.5 and angle < 157.5: return "↖️"
+    if angle >= 157.5 and angle < 202.5: return "↑"
+    if angle >= 202.5 and angle < 247.5: return "↗️"
+    if angle >= 247.5 and angle < 292.5: return "→"
+    if angle >= 292.5 and angle < 337.5: return "↘️"
+
 class WeatherToday(Static):
     _elements = {}
     def on_mount(self):
+        self.border_title = "Current"
         self._elements = {
             "updated": WeatherElement(label="Updated: "),
             "conditions": WeatherElement(label="Conditions: "),
             "temp": WeatherElement(label="Temperature: "),
             "humidity": WeatherElement(label="Humidity: "),
-            "windspeed": WeatherElement(label="Wind (gust): "),
+            "windspeed": WeatherElement(label="Wind / Gust: "),
             "cloudcover": WeatherElement(label="Cloud cover: "),
             "uvindex": WeatherElement(label="UV Index: "),
             "sunrise": WeatherElement(label="Sunrise / Sunset: ")
@@ -43,15 +54,6 @@ class WeatherToday(Static):
             self.mount(elm)
 
     def refresh_data(self, data):
-        def winddir(angle):
-            if angle < 22.5 or angle >= 337.5: return "↓"
-            if angle >= 22.5 and angle < 67.5: return "↙️"
-            if angle >= 67.5 and angle < 112.5: return "←"
-            if angle >= 112.5 and angle < 157.5: return "↖️"
-            if angle >= 157.5 and angle < 202.5: return "↑"
-            if angle >= 202.5 and angle < 247.5: return "↗️"
-            if angle >= 247.5 and angle < 292.5: return "→"
-            if angle >= 292.5 and angle < 337.5: return "↘️"
         self._data = data
         current = self._data["currentConditions"]
         elms = self._elements
@@ -59,22 +61,52 @@ class WeatherToday(Static):
         elms["conditions"].text = current["conditions"]
         elms["temp"].text = "{temp}\u00B0C feels like {fl}\u00B0C".format(temp=current["temp"], fl=current["feelslike"])
         elms["humidity"].text = "{hum}%".format(hum=current["humidity"])
-        elms["windspeed"].text = "{dir}{speed} km/h ({gust} km/h)".format(speed=current["windspeed"], gust=current["windgust"], dir=winddir(current["winddir"]))
+        elms["windspeed"].text = "{dir} {speed} / {gust} km/h".format(speed=current["windspeed"], gust=current["windgust"], dir=winddir(current["winddir"]))
         elms["cloudcover"].text = "{cloud}%".format(cloud=current["cloudcover"])
         elms["uvindex"].text = str(current["uvindex"])
-        elms["sunrise"].text = "{rise} / {set}".format(rise=current["sunrise"], set=current["sunset"])
+        elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
+
+class WeatherNext(Static):
+    _table = None
+    def on_mount(self):
+        self.border_title = "Forecast"
+        self._table = DataTable(classes="forecast")
+        self._table.add_columns(*("Day", "Condition", "Temperature / Feels Like", "Humidity", "Snow", "Wind / Gust", "Cloud", "UV", "Sun"))
+        self.mount(self._table)
+
+    def refresh_data(self, data):
+        self._table.clear()
+        i = 0
+        for day in data["days"]:
+            self._table.add_row(
+                ("today" if i == 0 else "+{i}".format(i=i)),
+                "{cond}".format(cond=day["conditions"]),
+                "{temp}\u00B0C / {fl}\u00B0C ({min}\u00B0C ~ {max}\u00B0C)".format(temp=day["temp"], fl=day["feelslike"], min=day["tempmin"], max=day["tempmax"]),
+                "{hum}%".format(hum=day["humidity"]),
+                "{snow} / {depth}m".format(snow=day["snow"], depth=day["snowdepth"]),
+                "{dir} {speed} / {gust} km/h".format(speed=day["windspeed"], gust=day["windgust"], dir=winddir(day["winddir"])),
+                "{cloud}%".format(cloud=day["cloudcover"]),
+                "{uv}".format(uv=day["uvindex"]),
+                "{rise}↑ {set}↓".format(rise=day["sunrise"], set=day["sunset"])
+            )
+            i += 1
 
 class Weather(Static):
-    _weather = None
+    _weather_today = None
+    _weather_next = None
     def refresh_data(self):
         error, data = api_weather()
         if error == None:
-            self._weather.refresh_data(data)
-            # TODO: refresh forcast
+            self._weather_today.refresh_data(data)
+            self._weather_next.refresh_data(data)
+            self.set_loading(False)
     def on_mount(self):
-        self.border_title = "Weather"
-        self._weather = WeatherToday(id="weather_today")
-        self.mount(self._weather)
+        self.set_loading(True)
+        self.border_title = "Weather Forecast"
+        self._weather_today = WeatherToday(id="weather_today")
+        self._weather_next = WeatherNext(id="weather_next")
+        self.mount(self._weather_today)
+        self.mount(self._weather_next)
         
         self.set_timer(1, self.refresh_data)
         self.set_interval(config["weatherRefreshInterval"], self.refresh_data)

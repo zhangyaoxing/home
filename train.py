@@ -40,7 +40,7 @@ class TrainStationMessage(Static):
     def on_mount(self):
         self.border_title = "Train Notice"
         self.set_loading(True)
-        self.load_message()
+        self.set_timer(1, self.load_message)
         self.set_interval(config["apiFreqCheck"], self.load_message)
     def refresh_message(self):
         self.load_message()
@@ -116,8 +116,8 @@ class TrainSchedule(Static):
     def on_mount(self):
         self.border_title = "Train Schedule"
         self.set_loading(True)
-        self.load_stations()
-        self.load_schedule()
+        self.set_timer(1, self.load_stations)
+        self.set_timer(1, self.load_schedule)
         # Refresh stations on a daily basis.
         self.set_interval(config["stationUpdateInterval"], self.load_stations)
         self.set_interval(config["apiFreqCheck"], self.load_schedule)
