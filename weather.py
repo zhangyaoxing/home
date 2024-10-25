@@ -71,6 +71,7 @@ class WeatherNext(Static):
     def on_mount(self):
         self.border_title = "Forecast"
         self._table = DataTable(classes="forecast")
+        self._table.cursor_type = "none"
         self._table.add_columns(*("Day", "Condition", "Temperature / Feels Like", "Humidity", "Snow", "Wind / Gust", "Cloud", "UV", "Sun"))
         self.mount(self._table)
 

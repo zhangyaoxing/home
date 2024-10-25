@@ -38,7 +38,7 @@ class TrainStationMessage(Static):
     def get_visible_size(self):
         return self.content_size
     def on_mount(self):
-        self.border_title = "Train Notice"
+        self.border_title = "Notices"
         self.set_loading(True)
         self.set_timer(1, self.load_message)
         self.set_interval(config["apiFreqCheck"], self.load_message)
@@ -94,9 +94,7 @@ class TrainSchedule(Static):
             for json in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
                 self.stations[json["LocationSignature"]] = json["AdvertisedLocationName"]
             logger.debug("Stations loaded: {stations}".format(stations=self.stations))
-            current_station = self.query_one("#current_station")
-            current_station.update("{s}".format(s=self.stations[config["myStationCode"]]))
-            self.mount(current_station)
+            self.border_subtitle = self.stations[config["myStationCode"]]
     def load_schedule(self):
         if is_freq_throttled(self.last_refresh):
             return
@@ -114,12 +112,16 @@ class TrainSchedule(Static):
             self.set_loading(False)
             self.last_refresh = datetime.now()
     def on_mount(self):
-        self.border_title = "Train Schedule"
+        self.border_title = "Schedules"
         self.set_loading(True)
         self.set_timer(1, self.load_stations)
         self.set_timer(1, self.load_schedule)
         # Refresh stations on a daily basis.
         self.set_interval(config["stationUpdateInterval"], self.load_stations)
         self.set_interval(config["apiFreqCheck"], self.load_schedule)
+
+class Train(Static):
     def compose(self):
-        yield Label("Loading...", id="current_station")
+        yield TrainSchedule(id="schedule")
+        yield TrainStationMessage(id="message")
+        self.border_title = "Train Information"

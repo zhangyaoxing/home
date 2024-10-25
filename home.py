@@ -3,7 +3,7 @@ from textual.app import App
 from textual.containers import ScrollableContainer
 from textual.widgets import *
 from libs.utils import *
-from train import TrainSchedule, TrainStationMessage
+from train import Train
 from weather import Weather
 
 logger = logging.getLogger(__name__)
@@ -21,11 +21,8 @@ class HomeApp(App):
 
     def compose(self):
         yield Header(show_clock=True)
-        with ScrollableContainer(id="train_layout"):
-            yield TrainSchedule(id="schedule")
-            yield TrainStationMessage(id="message")
-        with ScrollableContainer(id="weather_layout"):
-            yield Weather(id="weather")
+        yield Train(id="train")
+        yield Weather(id="weather")
         yield Footer()
 
     def action_toggle_dark_mode(self):
@@ -36,6 +33,8 @@ class HomeApp(App):
     
     def action_refresh(self):
         self.query_one("TrainStationMessage").refresh_message()
+        # TODO: refresh train schedule
+        # TODO: refresh weather
 
 if __name__ == "__main__":
     HomeApp().run()
