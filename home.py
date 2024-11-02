@@ -20,10 +20,10 @@ class HomeApp(App):
         self.title = config["title"]
 
     def compose(self):
-        yield Header(show_clock=True)
+        # yield Header(show_clock=True)
         yield Train(id="train")
         yield Weather(id="weather")
-        yield Footer()
+        # yield Footer()
 
     def action_toggle_dark_mode(self):
         self.dark = not self.dark

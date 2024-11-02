@@ -104,6 +104,7 @@ class Weather(Static):
     def on_mount(self):
         self.set_loading(True)
         self.border_title = "Weather Forecast"
+        self.border_subtitle = "Stockholm"
         self._weather_today = WeatherToday(id="weather_today")
         self._weather_next = WeatherNext(id="weather_next")
         self.mount(self._weather_today)
