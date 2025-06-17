@@ -1,6 +1,7 @@
 {
     "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
     "weatherApiUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm?unitGroup=metric&elements=datetime%2CdatetimeEpoch%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslike%2Chumidity%2Csnow%2Csnowdepth%2Cwindgust%2Cwindspeed%2Cwinddir%2Ccloudcover%2Cuvindex%2Csevererisk%2Csunrise%2Csunset%2Cmoonphase%2Cconditions%2Cdescription&include=days%2Calerts%2Ccurrent%2Cevents&key={key}&options=nonulls&contentType=json",
+    "haApiUrl": "http://homeassistant.local:8123",
     "myStationCode": "Sod",
     "logLevel": "FATAL",
     "message": {
@@ -32,5 +33,20 @@
     }],
     "stationUpdateInterval": 86400,
     "weatherRefreshInterval": 300,
+    "sensors": {
+        "temp": [
+            "sensor.wen_shi_du_chuan_gan_qi_temperature",
+            "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
+            "sensor.temp_hum_temperature"
+        ],
+        "hum": [
+            "sensor.wen_shi_du_chuan_gan_qi_humidity",
+            "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
+            "sensor.temp_hum_humidity"
+        ],
+        "illu": [
+            "sensor.tz3000_9kbbfeho_ts0222_illuminance"
+        ]
+    },
     "title": "Yaoxing's Sweet Home"
 }

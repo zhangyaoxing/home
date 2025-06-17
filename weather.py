@@ -1,5 +1,6 @@
 from textual.widgets import *
 from libs.weather_api import api_weather
+from libs.ha_api import api_ha
 from libs.utils import *
 
 config = load_config()
@@ -47,13 +48,16 @@ class WeatherToday(Static):
             "windspeed": WeatherElement(label="Wind / Gust: "),
             "cloudcover": WeatherElement(label="Cloud cover: "),
             "uvindex": WeatherElement(label="UV Index: "),
-            "sunrise": WeatherElement(label="Sunrise / Sunset: ")
+            "sunrise": WeatherElement(label="Sunrise / Sunset: "),
+            "temp_in": WeatherElement(label="Temperature (Room): "),
+            "hum_in": WeatherElement(label="Humidity (Room): "),
+            "illu_in": WeatherElement(label="Illuminance (Room): ")
         }
         for key in self._elements:
             elm = self._elements[key]
             self.mount(elm)
 
-    def refresh_data(self, data):
+    def refresh_data(self, data, in_data):
         self._data = data
         current = self._data["currentConditions"]
         elms = self._elements
@@ -65,6 +69,9 @@ class WeatherToday(Static):
         elms["cloudcover"].text = "{cloud}%".format(cloud=current["cloudcover"])
         elms["uvindex"].text = str(current["uvindex"])
         elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
+        elms["temp_in"].text = ",".join(in_data["temp"])
+        elms["hum_in"].text = ",".join(in_data["hum"])
+        elms["illu_in"].text = ",".join(in_data["illu"])
 
 class WeatherNext(Static):
     _table = None
@@ -98,7 +105,8 @@ class Weather(Static):
     def refresh_data(self):
         error, data = api_weather()
         if error == None:
-            self._weather_today.refresh_data(data)
+            error, in_data = api_ha()
+            self._weather_today.refresh_data(data, in_data)
             self._weather_next.refresh_data(data)
             self.set_loading(False)
     def on_mount(self):

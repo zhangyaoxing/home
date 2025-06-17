@@ -31,11 +31,15 @@ config_path = get_script_path("config.json")
 config = json.load(open(config_path))
 config["trainKey"] = config.get("trainKey", os.environ.get("trainKey", None))
 config["weatherKey"] = config.get("weatherKey", os.environ.get("weatherKey", None))
+config["haKey"] = config.get("haKey", os.environ.get("haKey", None))
 if config["trainKey"] == None:
     print(yellow("Train API key is not configured."))
     exit()
 if config["weatherKey"] == None:
     print(yellow("Weather API key is not configured."))
+    exit()
+if config["haKey"] == None:
+    print(yellow("Homeassistant API key is not configured."))
     exit()
 
 def load_config():
