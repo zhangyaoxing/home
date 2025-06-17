@@ -69,9 +69,10 @@ class WeatherToday(Static):
         elms["cloudcover"].text = "{cloud}%".format(cloud=current["cloudcover"])
         elms["uvindex"].text = str(current["uvindex"])
         elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
-        elms["temp_in"].text = ",".join(in_data["temp"])
-        elms["hum_in"].text = ",".join(in_data["hum"])
-        elms["illu_in"].text = ",".join(in_data["illu"])
+        if in_data is not None:
+            elms["temp_in"].text = ",".join(in_data["temp"])
+            elms["hum_in"].text = ",".join(in_data["hum"])
+            elms["illu_in"].text = ",".join(in_data["illu"])
 
 class WeatherNext(Static):
     _table = None
