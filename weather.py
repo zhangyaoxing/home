@@ -105,12 +105,17 @@ class Weather(Static):
     _weather_today = None
     _weather_next = None
     def refresh_data(self):
-        error, data = api_weather()
-        if error == None:
-            error, in_data = api_ha()
+        err1, data = api_weather()
+        err2, in_data = api_ha()
+        if err2 is not None:
+            logger.error(f"Can't access Home Assistant API: {err2}")
+        if err1 is not None:
+            logger.error(f"Can't access weather API: {err1}")
+        else:
             self._weather_today.refresh_data(data, in_data)
             self._weather_next.refresh_data(data)
             self.set_loading(False)
+        
     def on_mount(self):
         self.set_loading(True)
         self.border_title = "Weather Forecast"

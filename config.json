@@ -3,7 +3,7 @@
     "weatherApiUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm?unitGroup=metric&elements=datetime%2CdatetimeEpoch%2Ctempmax%2Ctempmin%2Ctemp%2Cfeelslike%2Chumidity%2Csnow%2Csnowdepth%2Cwindgust%2Cwindspeed%2Cwinddir%2Ccloudcover%2Cuvindex%2Csevererisk%2Csunrise%2Csunset%2Cmoonphase%2Cconditions%2Cdescription&include=days%2Calerts%2Ccurrent%2Cevents&key={key}&options=nonulls&contentType=json",
     "haApiUrl": "http://homeassistant.local:8123",
     "myStationCode": "Sod",
-    "logLevel": "FATAL",
+    "logLevel": "INFO",
     "message": {
         "updateIntervalMin": 5,
         "scrollSpeed": 0.1,

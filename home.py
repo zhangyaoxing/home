@@ -35,4 +35,5 @@ class HomeApp(App):
         # TODO: refresh weather
 
 if __name__ == "__main__":
+    logger.info("Starting HomeApp...")
     HomeApp().run()

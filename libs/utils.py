@@ -48,6 +48,12 @@ def load_config():
 
 levels = logging._nameToLevel
 log_level = levels[config["logLevel"]]
-logging.basicConfig(level = log_level)
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('home_app.log'),
+    ]
+)
 logger = logging.getLogger(__name__)
 logger.info("Log level: %s" % config["logLevel"])
