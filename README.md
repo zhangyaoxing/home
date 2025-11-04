@@ -4,7 +4,7 @@ Application is built on a text based UI to save memory.
 
 ## Dependencies
 ```bash
-pip install textual textual-dev pytz requests
+pip install -r requirements.txt
 ```
 
 ## Config
