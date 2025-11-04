@@ -70,6 +70,7 @@ class WeatherToday(Static):
         elms["uvindex"].text = str(current["uvindex"])
         elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
         if in_data is not None:
+            # Sometimes the in_data returned is None. Not sure why.
             elms["temp_in"].text = ",".join(in_data["temp"])
             elms["hum_in"].text = ",".join(in_data["hum"])
             elms["illu_in"].text = ",".join(in_data["illu"])
