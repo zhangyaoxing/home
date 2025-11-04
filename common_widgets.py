@@ -1,4 +1,4 @@
-from textual.widgets import *
+from textual.widgets import Label
 from libs.utils import *
 
 class ScrollingLabel(Label):

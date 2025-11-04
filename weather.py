@@ -1,4 +1,4 @@
-from textual.widgets import *
+from textual.widgets import Label, DataTable, Static
 from libs.weather_api import api_weather
 from libs.ha_api import api_ha
 from libs.utils import *

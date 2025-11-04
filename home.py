@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 from textual.app import App
-from textual.containers import ScrollableContainer
-from textual.widgets import *
 from libs.utils import *
 from train import Train
 from weather import Weather

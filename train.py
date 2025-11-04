@@ -1,5 +1,5 @@
 from datetime import datetime
-from textual.widgets import *
+from textual.widgets import DataTable, Static, Rule
 from common_widgets import *
 from libs.traffic_api import *
 from libs.utils import *
