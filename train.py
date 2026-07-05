@@ -252,6 +252,7 @@ class TrainSchedule(Static):
 
     def _apply_schedule(self, schedule_json):
         schedules = schedule_json["RESPONSE"]["RESULT"][0]["TrainAnnouncement"]
+        now = datetime.now(tz=pytz.UTC)
         self.remove_children()
         self.mount(
             Horizontal(
@@ -261,7 +262,15 @@ class TrainSchedule(Static):
                 classes="schedule-header",
             )
         )
+        passed_count = 0
         for schedule in schedules:
+            advertised_time = datetime.fromisoformat(
+                schedule["AdvertisedTimeAtLocation"]
+            )
+            if now > advertised_time:
+                passed_count += 1
+                if passed_count > 1:
+                    continue
             self.mount(ScheduleEntry(schedule, self.stations))
 
         self.set_loading(False)
