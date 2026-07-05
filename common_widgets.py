@@ -1,5 +1,5 @@
 from textual.widgets import Label
-from libs.utils import *
+from libs.utils import config
 
 class ScrollingLabel(Label):
     position = config["message"]["margin"]

@@ -1,6 +1,6 @@
 import requests
 import logging
-from libs.utils import *
+from libs.utils import load_config
 
 logger = logging.getLogger(__name__)
 config = load_config()

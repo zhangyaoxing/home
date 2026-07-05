@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+import logging
 from textual.app import App
-from libs.utils import *
+from libs.utils import config
 from train import Train
 from weather import Weather
 

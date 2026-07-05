@@ -1,9 +1,12 @@
 from datetime import datetime
+import logging
 from textual.widgets import DataTable, Static, Rule
-from common_widgets import *
-from libs.traffic_api import *
-from libs.utils import *
+from common_widgets import ScrollingLabel
+from libs.traffic_api import is_freq_throttled, api_train_message, api_train_stations, api_train_announcement
+from libs.utils import config
 import pytz
+
+logger = logging.getLogger(__name__)
 
 class TrainStationMessage(Static):
     last_refresh = datetime.min
@@ -13,7 +16,7 @@ class TrainStationMessage(Static):
         lag_message = []
         normal_message = []
         error, messages_json = api_train_message()
-        if error != None:
+        if error is not None:
             logger.error("Can't access API to get train messages.")
             return
         else:
@@ -87,7 +90,7 @@ class TrainSchedule(Static):
     last_refresh = datetime.min
     def load_stations(self):
         error, stations_json = api_train_stations()
-        if error != None:
+        if error is not None:
             logger.error("Can't access API to get train stations.")
             return
         else:
@@ -99,7 +102,7 @@ class TrainSchedule(Static):
         if is_freq_throttled(self.last_refresh):
             return
         error, schedule_json = api_train_announcement()
-        if error != None:
+        if error is not None:
             logger.error("Can't access API to get train stations.")
             return
         else:

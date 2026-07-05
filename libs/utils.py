@@ -1,4 +1,3 @@
-from shutil import rmtree, move
 import os
 import json
 import logging
@@ -22,7 +21,7 @@ def reverse(s: str) -> str: return colorize(7, s)
 def invisible(s: str) -> str: return colorize(8, s)
 def get_script_path(filename = None):
     script_folder = Path(dirname(abspath(getsourcefile(lambda:0))))
-    if filename == None:
+    if filename is None:
         return str((script_folder / "..").resolve())
     else:
         return str((script_folder / ".." / filename).resolve())
@@ -32,13 +31,13 @@ config = json.load(open(config_path))
 config["trainKey"] = config.get("trainKey", os.environ.get("trainKey", None))
 config["weatherKey"] = config.get("weatherKey", os.environ.get("weatherKey", None))
 config["haKey"] = config.get("haKey", os.environ.get("haKey", None))
-if config["trainKey"] == None:
+if config["trainKey"] is None:
     print(yellow("Train API key is not configured."))
     exit()
-if config["weatherKey"] == None:
+if config["weatherKey"] is None:
     print(yellow("Weather API key is not configured."))
     exit()
-if config["haKey"] == None:
+if config["haKey"] is None:
     print(yellow("Homeassistant API key is not configured."))
     exit()
 
