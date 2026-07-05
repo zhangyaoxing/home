@@ -5,6 +5,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 config = load_config()
+REQUEST_TIMEOUT = (3.05, 15)
 
 # TODO: Make the request async.
 url = config["trainApiUrl"]
@@ -24,7 +25,12 @@ def api_request(body):
     headers = {'Content-Type': 'application/xml'}
     request_xml = "<REQUEST><LOGIN authenticationkey='{key}'/>{body}</REQUEST>".format(key=config["trainKey"], body=body)
     try:
-        result = requests.post(url, data=request_xml, headers=headers)
+        result = requests.post(
+            url,
+            data=request_xml,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT,
+        )
         code = result.status_code
         json = result.json()
         logger.debug(json)

@@ -1,6 +1,7 @@
 import logging
 
 from rich.markup import escape
+from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
@@ -36,7 +37,16 @@ class HumidityWarningPanel(Static):
 
     def compose(self) -> ComposeResult:
         yield Static("LOW HUMIDITY", classes="humidity-warning-title")
+        yield Static(
+            "██\n██\n██\n██\n\n██",
+            id="humidity-warning-icon",
+        )
         yield Static(id="humidity-warning-readings")
+
+    def toggle_warning_icon(self):
+        self.query_one("#humidity-warning-icon").toggle_class(
+            "humidity-warning-icon-off"
+        )
 
     def update_sensors(self, sensors):
         self.sensors = sensors
@@ -49,6 +59,7 @@ class HumidityWarningPanel(Static):
 
     def on_mount(self):
         self.update_sensors(self.sensors)
+        self.set_interval(0.5, self.toggle_warning_icon)
 
 
 class HumidityWarningScreen(ModalScreen):
@@ -62,25 +73,6 @@ class HumidityWarningScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield HumidityWarningPanel(self.sensors)
-
-    def refresh_data(self):
-        error, data = api_ha()
-        if error is not None:
-            logger.error(
-                "Can't refresh humidity warning from Home Assistant: %s",
-                error,
-            )
-            return
-
-        low_sensors = low_humidity_sensors(data)
-        if not low_sensors:
-            self.dismiss()
-            return
-        self.query_one(HumidityWarningPanel).update_sensors(low_sensors)
-
-    def on_mount(self):
-        self.set_interval(config["sensorRefreshInterval"], self.refresh_data)
-
 
 class SensorRow(Horizontal):
     def __init__(self, sensor):
@@ -99,8 +91,55 @@ class SensorRow(Horizontal):
 
 
 class Sensors(Static):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._low_sensors = []
+        self._warning_timer = None
+
+    def _warning_screen(self):
+        return next(
+            (
+                screen
+                for screen in self.app.screen_stack
+                if isinstance(screen, HumidityWarningScreen)
+            ),
+            None,
+        )
+
+    def _schedule_warning_toggle(self):
+        self._warning_timer = self.set_timer(
+            config["humidityWarningInterval"],
+            self._toggle_warning,
+        )
+
+    def _toggle_warning(self):
+        self._warning_timer = None
+        if not self._low_sensors:
+            return
+
+        warning_screen = self._warning_screen()
+        if warning_screen is None:
+            self.app.push_screen(HumidityWarningScreen(self._low_sensors))
+        else:
+            warning_screen.dismiss()
+        self._schedule_warning_toggle()
+
+    def _stop_warning_cycle(self):
+        if self._warning_timer is not None:
+            self._warning_timer.stop()
+            self._warning_timer = None
+
+    @work(
+        thread=True,
+        group="sensor-refresh",
+        exclusive=True,
+        exit_on_error=False,
+    )
     def refresh_data(self):
         error, data = api_ha()
+        self.app.call_from_thread(self._apply_refresh, error, data)
+
+    def _apply_refresh(self, error, data):
         if error is not None:
             logger.error("Can't access Home Assistant API: %s", error)
             self.remove_children()
@@ -114,20 +153,19 @@ class Sensors(Static):
         self.set_loading(False)
 
         low_sensors = low_humidity_sensors(data)
-        warning_screen = next(
-            (
-                screen
-                for screen in self.app.screen_stack
-                if isinstance(screen, HumidityWarningScreen)
-            ),
-            None,
-        )
-        if low_sensors and warning_screen is None:
-            self.app.push_screen(HumidityWarningScreen(low_sensors))
-        elif low_sensors:
+        self._low_sensors = low_sensors
+        warning_screen = self._warning_screen()
+        if not low_sensors:
+            if warning_screen is not None:
+                warning_screen.dismiss()
+            self._stop_warning_cycle()
+        elif warning_screen is not None:
             warning_screen.query_one(HumidityWarningPanel).update_sensors(
                 low_sensors
             )
+        elif self._warning_timer is None:
+            self.app.push_screen(HumidityWarningScreen(low_sensors))
+            self._schedule_warning_toggle()
 
     def on_mount(self):
         self.border_title = "Sensors"

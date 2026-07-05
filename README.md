@@ -33,6 +33,8 @@ Config settings can be found in `/config.json`.
 - `stationUpdateInterval`: Because the stations doesn't change easily. We only update the station list once a day.
 - `weatherRefreshInterval`: How often weather data are refreshed, in seconds.
 - `sensorRefreshInterval`: How often sensor data are refreshed, in seconds.
+- `humidityWarningInterval`: How many seconds the low-humidity warning remains
+  visible or hidden before alternating.
 - `title`: The title showing on top of the screen.
 
 For security reasons, keys are not saved in the `config.json`. I suggest you can fill them in  `my_keys.sh`. Remember, never push the key to Github.

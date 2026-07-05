@@ -3,6 +3,7 @@ import logging
 
 import pytz
 from rich.markup import escape
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Rule, Static
@@ -36,6 +37,12 @@ class TrainStationMessage(Static):
         super().__init__(*args, **kwargs)
         self.last_refresh = datetime.min
 
+    @work(
+        thread=True,
+        group="train-message-refresh",
+        exclusive=True,
+        exit_on_error=False,
+    )
     def load_message(self):
         if is_freq_throttled(self.last_refresh):
             return
@@ -45,6 +52,9 @@ class TrainStationMessage(Static):
             logger.error("Can't access API to get train messages.")
             return
 
+        self.app.call_from_thread(self._apply_messages, messages_json)
+
+    def _apply_messages(self, messages_json):
         messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
         messages = sorted(
             messages,
@@ -193,19 +203,42 @@ class TrainSchedule(Static):
         self.stations = {}
         self.last_refresh = datetime.min
 
+    @work(
+        thread=True,
+        group="train-stations-refresh",
+        exclusive=True,
+        exit_on_error=False,
+    )
     def load_stations(self):
         error, stations_json = api_train_stations()
         if error is not None:
             logger.error("Can't access API to get train stations.")
+            self.app.call_from_thread(self._apply_stations, None)
             return
 
-        for station in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
-            self.stations[station["LocationSignature"]] = station[
-                "AdvertisedLocationName"
-            ]
-        logger.debug("Stations loaded: %s", self.stations)
-        self.border_subtitle = self.stations.get(config["myStationCode"], "")
+        self.app.call_from_thread(self._apply_stations, stations_json)
 
+    def _apply_stations(self, stations_json):
+        if stations_json is not None:
+            for station in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
+                self.stations[station["LocationSignature"]] = station[
+                    "AdvertisedLocationName"
+                ]
+            logger.debug("Stations loaded: %s", self.stations)
+            self.border_subtitle = self.stations.get(config["myStationCode"], "")
+
+        # The initial schedule must not render before station codes can be
+        # translated. If station loading failed, still show the schedule using
+        # the codes rather than leaving the panel empty.
+        if self.last_refresh == datetime.min:
+            self.load_schedule()
+
+    @work(
+        thread=True,
+        group="train-schedule-refresh",
+        exclusive=True,
+        exit_on_error=False,
+    )
     def load_schedule(self):
         if is_freq_throttled(self.last_refresh):
             return
@@ -215,6 +248,9 @@ class TrainSchedule(Static):
             logger.error("Can't access API to get train schedules.")
             return
 
+        self.app.call_from_thread(self._apply_schedule, schedule_json)
+
+    def _apply_schedule(self, schedule_json):
         schedules = schedule_json["RESPONSE"]["RESULT"][0]["TrainAnnouncement"]
         self.remove_children()
         self.mount(
@@ -235,7 +271,6 @@ class TrainSchedule(Static):
         self.border_title = "Schedules"
         self.set_loading(True)
         self.set_timer(1, self.load_stations)
-        self.set_timer(1, self.load_schedule)
         self.set_interval(config["stationUpdateInterval"], self.load_stations)
         self.set_interval(config["apiFreqCheck"], self.load_schedule)
 

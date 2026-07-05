@@ -4,12 +4,13 @@ from libs.utils import load_config
 
 logger = logging.getLogger(__name__)
 config = load_config()
+REQUEST_TIMEOUT = (3.05, 15)
                 
 def api_weather():
     key = config["weatherKey"]
     url = config["weatherApiUrl"].format(key=key)
     try:
-        result = requests.request("GET", url)
+        result = requests.get(url, timeout=REQUEST_TIMEOUT)
         code = result.status_code
         json = result.json()
         logger.debug(json)

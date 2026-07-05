@@ -128,6 +128,18 @@ HumidityWarningScreen {
     text-style: bold;
 }
 
+#humidity-warning-icon {
+    width: 100%;
+    height: 1fr;
+    content-align: center middle;
+    color: red;
+    text-style: bold;
+}
+
+.humidity-warning-icon-off {
+    visibility: hidden;
+}
+
 #humidity-warning-readings {
     width: 100%;
     height: auto;

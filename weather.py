@@ -1,5 +1,8 @@
-from textual.widgets import Label, DataTable, Static
 import logging
+
+from textual import work
+from textual.widgets import Label, DataTable, Static
+
 from libs.weather_api import api_weather
 from libs.utils import load_config
 
@@ -76,6 +79,11 @@ class WeatherToday(Static):
         elms["uvindex"].text = str(current["uvindex"])
         elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
 
+    def show_error(self):
+        self._elements["updated"].text = "Unavailable"
+        self._elements["conditions"].text = "Weather service unavailable"
+
+
 class WeatherNext(Static):
     _table = None
     def on_mount(self):
@@ -102,13 +110,34 @@ class WeatherNext(Static):
             )
             i += 1
 
+    def show_error(self):
+        self._table.clear()
+        self._table.add_row("Unavailable", "Weather service unavailable")
+
+
 class Weather(Static):
     _weather_today = None
     _weather_next = None
+
+    @work(
+        thread=True,
+        group="weather-refresh",
+        exclusive=True,
+        exit_on_error=False,
+    )
     def refresh_data(self):
         error, data = api_weather()
+        self.app.call_from_thread(self._apply_refresh, error, data)
+
+    def _apply_refresh(self, error, data):
         if error is not None:
-            logger.error(f"Can't access weather API: {error}")
+            logger.error(
+                "Can't access weather API (%s)",
+                type(error).__name__,
+            )
+            self._weather_today.show_error()
+            self._weather_next.show_error()
+            self.set_loading(False)
         else:
             self._weather_today.refresh_data(data)
             self._weather_next.refresh_data(data)
