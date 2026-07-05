@@ -33,6 +33,7 @@
     }],
     "stationUpdateInterval": 86400,
     "weatherRefreshInterval": 300,
+    "sensorRefreshInterval": 30,
     "sensors": {
         "temp": [
             "sensor.wen_shi_du_chuan_gan_qi_temperature",

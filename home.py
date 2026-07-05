@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import logging
 from textual.app import App
+from textual.binding import Binding
+
 from libs.utils import config
 from sensors import Sensors
 from train import Train
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 class HomeApp(App):
     BINDINGS = [
         ("d", "toggle_dark_mode" ,"Toggle dark mode"),
-        ("q", "quit", "Quit"),
+        Binding("q", "quit", "Quit", priority=True),
         ("r", "refresh", "Refresh")
     ]
     CSS_PATH = "style.css"
@@ -30,7 +32,7 @@ class HomeApp(App):
         self.dark = not self.dark
 
     def action_quit(self):
-        exit()
+        self.exit()
     
     def action_refresh(self):
         self.query_one("TrainStationMessage").refresh_message()

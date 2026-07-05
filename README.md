@@ -31,6 +31,8 @@ Config settings can be found in `/config.json`.
     | 19:00~24:00 |      10       |  30   |
     |Total: 212/day|||
 - `stationUpdateInterval`: Because the stations doesn't change easily. We only update the station list once a day.
+- `weatherRefreshInterval`: How often weather data are refreshed, in seconds.
+- `sensorRefreshInterval`: How often sensor data are refreshed, in seconds.
 - `title`: The title showing on top of the screen.
 
 For security reasons, keys are not saved in the `config.json`. I suggest you can fill them in  `my_keys.sh`. Remember, never push the key to Github.

@@ -2,6 +2,7 @@ import logging
 
 from rich.markup import escape
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Static
@@ -51,6 +52,10 @@ class HumidityWarningPanel(Static):
 
 
 class HumidityWarningScreen(ModalScreen):
+    BINDINGS = [
+        Binding("q", "app.quit", "Quit", priority=True),
+    ]
+
     def __init__(self, sensors):
         super().__init__()
         self.sensors = sensors
@@ -74,7 +79,7 @@ class HumidityWarningScreen(ModalScreen):
         self.query_one(HumidityWarningPanel).update_sensors(low_sensors)
 
     def on_mount(self):
-        self.set_interval(config["weatherRefreshInterval"], self.refresh_data)
+        self.set_interval(config["sensorRefreshInterval"], self.refresh_data)
 
 
 class SensorRow(Horizontal):
@@ -128,4 +133,4 @@ class Sensors(Static):
         self.border_title = "Sensors"
         self.set_loading(True)
         self.set_timer(1, self.refresh_data)
-        self.set_interval(config["weatherRefreshInterval"], self.refresh_data)
+        self.set_interval(config["sensorRefreshInterval"], self.refresh_data)

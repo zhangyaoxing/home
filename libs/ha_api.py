@@ -15,7 +15,7 @@ def api_ha():
     global _cached_at, _cached_data
     if (
         _cached_data is not None
-        and monotonic() - _cached_at < config["weatherRefreshInterval"]
+        and monotonic() - _cached_at < config["sensorRefreshInterval"]
     ):
         return None, _cached_data
 
