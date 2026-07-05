@@ -4,7 +4,12 @@ Application is built on a text based UI to save memory.
 
 ## Dependencies
 ```bash
-pip install -r requirements.txt
+pip install -e .
+```
+
+To include the Textual development tools:
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Config

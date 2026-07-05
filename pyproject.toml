@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "home-control-panel"
+version = "0.1.0"
+description = "A text-based home control panel."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pytz==2025.2",
+    "requests==2.32.5",
+    "textual==6.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "textual-dev==1.8.0",
+]
+
+[tool.setuptools]
+py-modules = ["common_widgets", "home", "train", "weather"]
+
+[tool.setuptools.packages.find]
+include = ["libs*"]
+namespaces = true

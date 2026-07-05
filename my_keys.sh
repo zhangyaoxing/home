@@ -1,3 +1,3 @@
-export trainKey=""
-export weatherKey=""
-export haKey=""
+export trainKey="d17e956c069a488689daecd146a95f3e"
+export weatherKey="FG5EYYNEBQHQ33TYVLV952WTQ"
+export haKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwZjZkNDkyNmE0ZjU0MTczYjEzMGQyYWFkOTc4ZDBhYiIsImlhdCI6MTc1MDEwMzI2MiwiZXhwIjoyMDY1NDYzMjYyfQ.0lVQ675V3rZsYUaosCQal8tx4FHajw1cYFUu4PLKVCA"
