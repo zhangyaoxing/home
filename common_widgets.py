@@ -2,10 +2,13 @@ from textual.widgets import Label
 from libs.utils import config
 
 class ScrollingLabel(Label):
-    position = config["message"]["margin"]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.position = config["message"]["margin"]
+
     def scroll(self):
         margin = config["message"]["margin"]
-        content_w = self.parent.get_visible_size().width
+        content_w = self.parent.content_size.width
         self.position -= 1
         if self.position < 0 and self.size.width + self.position >= content_w:
             self.styles.offset = self.position, 0

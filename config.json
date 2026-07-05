@@ -37,12 +37,18 @@
         "temp": [
             "sensor.wen_shi_du_chuan_gan_qi_temperature",
             "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
-            "sensor.temp_hum_temperature"
+            "sensor.temp_hum_temperature",
+            "sensor.plant_hum_1_temperature",
+            "sensor.plant_hum_temperature",
+            "sensor.hobeian_zg_303z_temperature"
         ],
         "hum": [
             "sensor.wen_shi_du_chuan_gan_qi_humidity",
             "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
-            "sensor.temp_hum_humidity"
+            "sensor.temp_hum_humidity",
+            "sensor.plant_hum_1_humidity",
+            "sensor.plant_hum_humidity",
+            "sensor.hobeian_zg_303z_humidity"
         ],
         "illu": [
             "sensor.tz3000_9kbbfeho_ts0222_illuminance"

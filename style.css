@@ -1,11 +1,19 @@
+Screen {
+    layout: grid;
+    grid-size: 4 2;
+    grid-columns: 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr;
+}
+
 #train {
     layout: horizontal;
     border: double greenyellow;
-    height: 50%;
+    column-span: 3;
+    height: 100%;
 }
 
 #schedule {
-    width: 30%;
+    width: 40%;
     height: 100%;
     border: solid greenyellow;
     overflow: hidden;
@@ -17,12 +25,114 @@
     margin: 1 0 0 1;
 }
 
+.schedule-header {
+    layout: horizontal;
+    height: 2;
+    text-style: bold;
+    border-bottom: solid gray;
+}
+
+.schedule-entry {
+    height: auto;
+    border-bottom: solid #404040;
+    overflow: hidden;
+}
+
+.schedule-line {
+    height: 1;
+}
+
+.schedule-route {
+    width: 1fr;
+}
+
+.schedule-track {
+    width: 6;
+}
+
+.schedule-time {
+    width: 8;
+    text-align: right;
+}
+
+.schedule-message {
+    height: 1;
+}
+
+.schedule-message-pair {
+    width: 100%;
+    overflow: hidden;
+}
+
+.schedule-message-scroll {
+    width: auto;
+}
+
 #message {
-    width: 70%;
+    width: 60%;
     overflow: hidden;
     height: 100%;
     border: solid greenyellow;
     padding: 1 1 0 1;
+}
+
+#sensors {
+    width: 100%;
+    height: 100%;
+    border: solid greenyellow;
+    overflow: hidden;
+    padding: 1;
+}
+
+.sensor-row {
+    width: 100%;
+    height: 1;
+}
+
+.sensor-name {
+    width: 1fr;
+    color: gray;
+    overflow: hidden;
+}
+
+.sensor-value {
+    width: auto;
+    padding-left: 1;
+    text-align: right;
+}
+
+.sensor-error {
+    color: red;
+}
+
+HumidityWarningScreen {
+    layout: vertical;
+    align: center middle;
+    background: #000000 70%;
+}
+
+#humidity-warning {
+    width: 66%;
+    height: 66%;
+    padding: 2 4;
+    border: double red;
+    background: #300000;
+    color: white;
+}
+
+.humidity-warning-title {
+    width: 100%;
+    height: 3;
+    content-align: center middle;
+    color: red;
+    text-style: bold;
+}
+
+#humidity-warning-readings {
+    width: 100%;
+    height: auto;
+    content-align: center top;
+    color: yellow;
 }
 
 .lag {
@@ -36,10 +146,6 @@
 
 Rule {
     margin: 0
-}
-
-TrainScheduleTable {
-    overflow: hidden;
 }
 
 #weather_today {
@@ -61,8 +167,9 @@ TrainScheduleTable {
 
 Weather {
     layout: horizontal;
+    column-span: 4;
     width: 100%;
-    height: 50%;
+    height: 100%;
     border: double greenyellow;
 }
 WeatherElement {

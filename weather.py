@@ -1,7 +1,6 @@
 from textual.widgets import Label, DataTable, Static
 import logging
 from libs.weather_api import api_weather
-from libs.ha_api import api_ha
 from libs.utils import load_config
 
 logger = logging.getLogger(__name__)
@@ -32,19 +31,19 @@ def winddir(angle):
     if angle < 22.5 or angle >= 337.5:
         return "↓"
     if angle >= 22.5 and angle < 67.5:
-        return "↙️"
+        return "↙"
     if angle >= 67.5 and angle < 112.5:
         return "←"
     if angle >= 112.5 and angle < 157.5:
-        return "↖️"
+        return "↖"
     if angle >= 157.5 and angle < 202.5:
         return "↑"
     if angle >= 202.5 and angle < 247.5:
-        return "↗️"
+        return "↗"
     if angle >= 247.5 and angle < 292.5:
         return "→"
     if angle >= 292.5 and angle < 337.5:
-        return "↘️"
+        return "↘"
 
 class WeatherToday(Static):
     _elements = {}
@@ -58,16 +57,13 @@ class WeatherToday(Static):
             "windspeed": WeatherElement(label="Wind / Gust: "),
             "cloudcover": WeatherElement(label="Cloud cover: "),
             "uvindex": WeatherElement(label="UV Index: "),
-            "sunrise": WeatherElement(label="Sunrise / Sunset: "),
-            "temp_in": WeatherElement(label="Temperature (Room): "),
-            "hum_in": WeatherElement(label="Humidity (Room): "),
-            "illu_in": WeatherElement(label="Illuminance (Room): ")
+            "sunrise": WeatherElement(label="Sunrise / Sunset: ")
         }
         for key in self._elements:
             elm = self._elements[key]
             self.mount(elm)
 
-    def refresh_data(self, data, in_data):
+    def refresh_data(self, data):
         self._data = data
         current = self._data["currentConditions"]
         elms = self._elements
@@ -79,11 +75,6 @@ class WeatherToday(Static):
         elms["cloudcover"].text = "{cloud}%".format(cloud=current["cloudcover"])
         elms["uvindex"].text = str(current["uvindex"])
         elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
-        if in_data is not None:
-            # Sometimes the in_data returned is None. Not sure why.
-            elms["temp_in"].text = ",".join(in_data["temp"])
-            elms["hum_in"].text = ",".join(in_data["hum"])
-            elms["illu_in"].text = ",".join(in_data["illu"])
 
 class WeatherNext(Static):
     _table = None
@@ -115,14 +106,11 @@ class Weather(Static):
     _weather_today = None
     _weather_next = None
     def refresh_data(self):
-        err1, data = api_weather()
-        err2, in_data = api_ha()
-        if err2 is not None:
-            logger.error(f"Can't access Home Assistant API: {err2}")
-        if err1 is not None:
-            logger.error(f"Can't access weather API: {err1}")
+        error, data = api_weather()
+        if error is not None:
+            logger.error(f"Can't access weather API: {error}")
         else:
-            self._weather_today.refresh_data(data, in_data)
+            self._weather_today.refresh_data(data)
             self._weather_next.refresh_data(data)
             self.set_loading(False)
         

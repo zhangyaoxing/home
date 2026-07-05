@@ -2,6 +2,7 @@
 import logging
 from textual.app import App
 from libs.utils import config
+from sensors import Sensors
 from train import Train
 from weather import Weather
 
@@ -21,6 +22,7 @@ class HomeApp(App):
     def compose(self):
         # yield Header(show_clock=True)
         yield Train(id="train")
+        yield Sensors(id="sensors")
         yield Weather(id="weather")
         # yield Footer()
 

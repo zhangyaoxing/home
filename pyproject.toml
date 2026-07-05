@@ -20,7 +20,7 @@ dev = [
 ]
 
 [tool.setuptools]
-py-modules = ["common_widgets", "home", "train", "weather"]
+py-modules = ["common_widgets", "home", "sensors", "train", "weather"]
 
 [tool.setuptools.packages.find]
 include = ["libs*"]

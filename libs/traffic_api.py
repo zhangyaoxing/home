@@ -86,5 +86,7 @@ def api_train_announcement():
       <INCLUDE>TrackAtLocation</INCLUDE>
       <INCLUDE>FromLocation</INCLUDE>
       <INCLUDE>ToLocation</INCLUDE>
+      <INCLUDE>Deviation</INCLUDE>
+      <INCLUDE>OtherInformation</INCLUDE>
   </QUERY>""".format(code=config["myStationCode"])
     return api_request(reqBody)
