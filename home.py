@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import logging
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from textual.app import App
 from textual.binding import Binding
 
