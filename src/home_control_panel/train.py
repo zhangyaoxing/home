@@ -14,6 +14,7 @@ from home_control_panel.libs.traffic_api import (
     api_train_message,
     api_train_stations,
     is_freq_throttled,
+    summarize_notice,
 )
 from home_control_panel.libs.utils import config
 
@@ -36,6 +37,7 @@ class TrainStationMessage(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_refresh = datetime.min
+        self._seen_messages = set()
 
     def compose(self) -> ComposeResult:
         yield Static()
@@ -55,9 +57,16 @@ class TrainStationMessage(Static):
             logger.error("Can't access API to get train messages.")
             return
 
-        self.app.call_from_thread(self._apply_messages, messages_json)
+        messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
+        summaries = {}
+        for message in messages:
+            text = _normalize_message(message.get("FreeText", ""))
+            if text and text not in self._seen_messages:
+                summaries[text] = summarize_notice(text)
 
-    def _apply_messages(self, messages_json):
+        self.app.call_from_thread(self._apply_messages, messages_json, summaries)
+
+    def _apply_messages(self, messages_json, summaries):
         messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
         messages = sorted(
             messages,
@@ -65,11 +74,16 @@ class TrainStationMessage(Static):
         )
 
         self.remove_children()
+        self._seen_messages.clear()
         for message in messages:
+            text = _normalize_message(message.get("FreeText", ""))
+            if text:
+                self._seen_messages.add(text)
+            display_text = summaries.get(text, text)
             status_class = "lag" if message.get("Status") == "Lag" else "normal"
             self.mount(
                 ScrollingLabel(
-                    _normalize_message(message.get("FreeText", "")),
+                    display_text,
                     classes=status_class,
                 )
             )

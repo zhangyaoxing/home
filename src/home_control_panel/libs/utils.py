@@ -31,6 +31,7 @@ with open(config_path) as f:
     config = json.load(f)
 config["trainKey"] = config.get("trainKey", os.environ.get("trainKey", None))
 config["haKey"] = config.get("haKey", os.environ.get("haKey", None))
+config["dsKey"] = config.get("dsKey", os.environ.get("dsKey", None))
 if config["trainKey"] is None:
     print(yellow("Train API key is not configured."))
     exit()

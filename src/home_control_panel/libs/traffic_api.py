@@ -74,15 +74,15 @@ def api_train_message():
     return api_request(reqBody)
 
 def api_train_announcement():
-    reqBody = """<QUERY objecttype='TrainAnnouncement' 
+    reqBody = """<QUERY objecttype='TrainAnnouncement'
       orderby='AdvertisedTimeAtLocation' schemaversion='1' limit="20">
       <FILTER>
       <AND>
           <OR>
               <AND>
-                  <GT name='AdvertisedTimeAtLocation' 
+                  <GT name='AdvertisedTimeAtLocation'
                               value='$dateadd(-00:05:00)' />
-                  <LT name='AdvertisedTimeAtLocation' 
+                  <LT name='AdvertisedTimeAtLocation'
                               value='$dateadd(12:00:00)' />
               </AND>
               <GT name='EstimatedTimeAtLocation' value='$now' />
@@ -100,3 +100,39 @@ def api_train_announcement():
       <INCLUDE>OtherInformation</INCLUDE>
   </QUERY>""".format(code=config["myStationCode"])
     return api_request(reqBody)
+
+
+def summarize_notice(text):
+    key = config.get("dsKey")
+    if not key:
+        return text
+    try:
+        result = requests.post(
+            "https://api.deepseek.com/chat/completions",
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a concise translator. "
+                            "Summarize Swedish train station notices into brief English. "
+                            "Keep it under one line. Only return the summary, no explanations."
+                        ),
+                    },
+                    {"role": "user", "content": text},
+                ],
+                "max_tokens": 120,
+                "temperature": 0,
+            },
+            timeout=15,
+        )
+        result.raise_for_status()
+        return result.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        logger.warning("DeepSeek summarization failed", exc_info=True)
+        return text
