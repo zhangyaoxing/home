@@ -146,18 +146,18 @@ Rule {
     border: double red;
     border-title-color: red;
     border-title-style: bold;
-    background: #300000;
+    background: #5f0000;
 }
 
 #weather_next.panel-warning-active {
     border: solid red;
     border-title-color: red;
     border-title-style: bold;
-    background: #300000;
+    background: #5f0000;
 }
 
 #weather_next.panel-warning-active .forecast {
-    background: #300000;
+    background: #5f0000;
 }
 
 #weather_next .forecast {
