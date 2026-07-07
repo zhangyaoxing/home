@@ -80,7 +80,7 @@ Screen {
 #sensors {
     width: 100%;
     height: 100%;
-    border: solid greenyellow;
+    border: double greenyellow;
     overflow: hidden;
     padding: 1;
 }
@@ -142,7 +142,12 @@ Rule {
     height: 100%;
 }
 
-#sensors.panel-warning-active,
+#sensors.panel-warning-active {
+    border: double red;
+    border-title-color: red;
+    border-title-style: bold;
+}
+
 #weather_next.panel-warning-active {
     border: solid red;
     border-title-color: red;
