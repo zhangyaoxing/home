@@ -2,7 +2,7 @@ Screen {
     layout: grid;
     grid-size: 3 3;
     grid-columns: 30% 50% 20%;
-    grid-rows: 1fr 1fr 30%;
+    grid-rows: 1fr 17 30%;
 }
 
 #train {
