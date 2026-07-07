@@ -168,10 +168,12 @@ class WeatherMetricChart(Canvas):
             return
 
         with self.batch_refresh():
+            title = f"{self._label} "
+            value_range = f"{min(values):g}-{max(values):g}"
             self.write_text(
                 self.size.width // 2,
                 0,
-                f"{self._label} {min(values):g}-{max(values):g}",
+                f"{title}[{self._style}]{value_range}[/]",
                 align=TextAlign.CENTER,
             )
             self.draw_line(
