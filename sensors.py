@@ -81,19 +81,32 @@ class HumidityWarningScreen(ModalScreen):
         yield HumidityWarningPanel(self.sensors)
 
 class SensorRow(Horizontal):
-    def __init__(self, sensor):
+    def __init__(self, sensor, exceeded=False):
         super().__init__(classes="sensor-row")
         self.sensor = sensor
+        self.exceeded = exceeded
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            escape(self.sensor["name"]),
-            classes="sensor-name",
-        )
-        yield Static(
-            f'{escape(str(self.sensor["state"]))}{escape(str(self.sensor["unit"]))}',
-            classes="sensor-value",
-        )
+        name = self.sensor["name"]
+        value = f'{self.sensor["state"]}{self.sensor["unit"]}'
+        if self.exceeded:
+            yield Static(
+                f"[bold red]{escape(name)}[/]",
+                classes="sensor-name sensor-exceeded",
+            )
+            yield Static(
+                f"[bold red]{escape(value)}[/]",
+                classes="sensor-value sensor-exceeded",
+            )
+        else:
+            yield Static(
+                escape(name),
+                classes="sensor-name",
+            )
+            yield Static(
+                escape(value),
+                classes="sensor-value",
+            )
 
 
 class Sensors(Static):
@@ -136,8 +149,9 @@ class Sensors(Static):
             self._warning_timer.stop()
             self._warning_timer = None
 
-    def _apply_humidity_warning(self, data):
-        low_sensors = low_humidity_sensors(data)
+    def _apply_humidity_warning(self, data, low_sensors=None):
+        if low_sensors is None:
+            low_sensors = low_humidity_sensors(data)
         self._low_sensors = low_sensors
         warning_screen = self._warning_screen()
         if not low_sensors:
@@ -179,14 +193,17 @@ class Sensors(Static):
             )
             for sensor in data["sensors"]
         )
+        low_sensors = low_humidity_sensors(data)
         if sensor_signature != self._sensor_signature:
+            exceeded_ids = {s["entity_id"] for s in low_sensors}
             self.remove_children()
             for sensor in data["sensors"]:
-                self.mount(SensorRow(sensor))
+                exceeded = sensor["entity_id"] in exceeded_ids
+                self.mount(SensorRow(sensor, exceeded=exceeded))
             self._sensor_signature = sensor_signature
 
         self.set_loading(False)
-        self._apply_humidity_warning(data)
+        self._apply_humidity_warning(data, low_sensors)
 
     def on_mount(self):
         self.border_title = "Sensors"

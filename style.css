@@ -101,6 +101,11 @@ Screen {
     text-align: right;
 }
 
+.sensor-exceeded {
+    color: red;
+    text-style: bold;
+}
+
 .sensor-error {
     color: red;
 }
