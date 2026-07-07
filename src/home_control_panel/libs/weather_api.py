@@ -1,22 +1,196 @@
-import requests
 import logging
+from collections import defaultdict
+from datetime import datetime, timezone
+
+import requests
+
 from home_control_panel.libs.utils import load_config
 
 logger = logging.getLogger(__name__)
 config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
-                
+
+SMHI_URL = (
+    "https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2"
+    "/geotype/point/lon/{lon}/lat/{lat}/data.json"
+)
+
+WSYMB2_MAP = {
+    1: "Clear",
+    2: "Nearly clear",
+    3: "Variable cloudiness",
+    4: "Halfclear",
+    5: "Cloudy",
+    6: "Overcast",
+    7: "Fog",
+    8: "Light rain showers",
+    9: "Moderate rain showers",
+    10: "Heavy rain showers",
+    11: "Thunderstorm",
+    12: "Light sleet showers",
+    13: "Moderate sleet showers",
+    14: "Heavy sleet showers",
+    15: "Light snow showers",
+    16: "Moderate snow showers",
+    17: "Heavy snow showers",
+    18: "Light rain",
+    19: "Moderate rain",
+    20: "Heavy rain",
+    21: "Thunder",
+    22: "Light sleet",
+    23: "Moderate sleet",
+    24: "Heavy sleet",
+    25: "Light snowfall",
+    26: "Moderate snowfall",
+    27: "Heavy snowfall",
+}
+
+
+def _pluck(params, name):
+    for p in params:
+        if p["name"] == name:
+            return p["values"][0]
+    return None
+
+
+def _group_by_day(time_series):
+    days = defaultdict(list)
+    for entry in time_series:
+        dt = datetime.fromisoformat(entry["validTime"])
+        day_key = dt.strftime("%Y-%m-%d")
+        days[day_key].append(entry)
+    return days
+
+
+def _aggregate_day(entries):
+    temps = []
+    humidities = []
+    windspeeds = []
+    winddirs = []
+    gusts = []
+    clouds = []
+    symbols = []
+    snow = 0.0
+
+    for entry in entries:
+        t = _pluck(entry["parameters"], "t")
+        ws = _pluck(entry["parameters"], "ws")
+        wd = _pluck(entry["parameters"], "wd")
+        gust = _pluck(entry["parameters"], "gust")
+        r = _pluck(entry["parameters"], "r")
+        tcc = _pluck(entry["parameters"], "tcc_mean")
+        wsymb = _pluck(entry["parameters"], "Wsymb2")
+        pmean = _pluck(entry["parameters"], "pmean")
+        spp = _pluck(entry["parameters"], "spp")
+
+        if t is not None:
+            temps.append(t)
+        if r is not None:
+            humidities.append(r)
+        if ws is not None:
+            windspeeds.append(ws)
+        if wd is not None:
+            winddirs.append(wd)
+        if gust is not None:
+            gusts.append(gust)
+        if tcc is not None:
+            clouds.append(tcc)
+        if wsymb is not None:
+            symbols.append(int(wsymb))
+
+        if pmean is not None and pmean > 0 and spp is not None and spp > 50:
+            snow += pmean
+
+    if not temps:
+        return None
+
+    ws_avg = sum(windspeeds) / len(windspeeds) if windspeeds else 0
+    wd_avg = sum(winddirs) / len(winddirs) if winddirs else 0
+    gust_max = max(gusts) if gusts else 0
+
+    mps_to_kmh = 3.6
+
+    return {
+        "temp": round(sum(temps) / len(temps), 1),
+        "tempmin": round(min(temps), 1),
+        "tempmax": round(max(temps), 1),
+        "feelslike": 0,
+        "humidity": round(sum(humidities) / len(humidities)) if humidities else 0,
+        "windspeed": round(ws_avg * mps_to_kmh, 1),
+        "windgust": round(gust_max * mps_to_kmh, 1),
+        "winddir": round(wd_avg),
+        "cloudcover": round(sum(clouds) / len(clouds) * 12.5) if clouds else 0,
+        "snow": snow,
+        "snowdepth": 0,
+        "uvindex": 0,
+        "sunrise": "—",
+        "sunset": "—",
+        "conditions": _dominant_symbol(symbols),
+    }
+
+
+def _dominant_symbol(symbols):
+    if not symbols:
+        return "—"
+    counts = defaultdict(int)
+    for s in symbols:
+        counts[s] += 1
+    return WSYMB2_MAP.get(max(counts, key=counts.get), "—")
+
+
+def _build_current(entry):
+    params = entry["parameters"]
+    t = _pluck(params, "t") or 0
+    ws = _pluck(params, "ws") or 0
+    gust = _pluck(params, "gust") or 0
+    wd = _pluck(params, "wd") or 0
+    r = _pluck(params, "r") or 0
+    tcc = _pluck(params, "tcc_mean") or 0
+    wsymb = _pluck(params, "Wsymb2")
+
+    mps_to_kmh = 3.6
+    return {
+        "datetime": entry["validTime"],
+        "conditions": WSYMB2_MAP.get(int(wsymb), "—") if wsymb else "—",
+        "temp": t,
+        "feelslike": 0,
+        "humidity": r,
+        "windspeed": round(ws * mps_to_kmh, 1),
+        "windgust": round(gust * mps_to_kmh, 1),
+        "winddir": wd,
+        "cloudcover": round(tcc * 12.5),
+        "uvindex": 0,
+        "sunrise": "—",
+        "sunset": "—",
+    }
+
+
 def api_weather():
-    key = config["weatherKey"]
-    url = config["weatherApiUrl"].format(key=key)
+    url = SMHI_URL.format(lon=config["weatherLon"], lat=config["weatherLat"])
     try:
         result = requests.get(url, timeout=REQUEST_TIMEOUT)
-        code = result.status_code
-        json = result.json()
-        logger.debug(json)
-        if code >= 200 and code < 300:
-            return None, json
-        else:
-            return Exception("Error accessing weather API."), None
-    except BaseException as error:
+        if result.status_code < 200 or result.status_code >= 300:
+            logger.error("SMHI API returned %s", result.status_code)
+            return Exception(f"SMHI API status {result.status_code}"), None
+        raw = result.json()
+        logger.debug("SMHI response: %s", str(raw)[:500])
+    except (requests.RequestException, ValueError) as error:
+        logger.error("SMHI API error: %s", error)
         return error, None
+
+    time_series = raw.get("timeSeries", [])
+    if not time_series:
+        return Exception("SMHI returned empty timeSeries"), None
+
+    current = _build_current(time_series[0])
+    days_by_key = _group_by_day(time_series)
+    days = []
+    for day_key in sorted(days_by_key.keys()):
+        day_data = _aggregate_day(days_by_key[day_key])
+        if day_data:
+            days.append(day_data)
+
+    return None, {
+        "currentConditions": current,
+        "days": days,
+    }

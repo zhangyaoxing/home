@@ -47,8 +47,6 @@ class WeatherToday(Static):
             "humidity": WeatherElement(label="Humidity: "),
             "windspeed": WeatherElement(label="Wind / Gust: "),
             "cloudcover": WeatherElement(label="Cloud cover: "),
-            "uvindex": WeatherElement(label="UV Index: "),
-            "sunrise": WeatherElement(label="Sunrise / Sunset: ")
         }
         for key in self._elements:
             elm = self._elements[key]
@@ -60,12 +58,10 @@ class WeatherToday(Static):
         elms = self._elements
         elms["updated"].text = current["datetime"]
         elms["conditions"].text = current["conditions"]
-        elms["temp"].text = "{temp}\u00B0C feels like {fl}\u00B0C".format(temp=current["temp"], fl=current["feelslike"])
+        elms["temp"].text = "{temp}\u00B0C".format(temp=current["temp"])
         elms["humidity"].text = "{hum}%".format(hum=current["humidity"])
         elms["windspeed"].text = "{dir} {speed} / {gust} km/h".format(speed=current["windspeed"], gust=current["windgust"], dir=winddir(current["winddir"]))
         elms["cloudcover"].text = "{cloud}%".format(cloud=current["cloudcover"])
-        elms["uvindex"].text = str(current["uvindex"])
-        elms["sunrise"].text = "{rise}↑ {set}↓".format(rise=current["sunrise"], set=current["sunset"])
 
     def show_error(self):
         self._elements["updated"].text = "Unavailable"
@@ -78,7 +74,7 @@ class WeatherNext(Static):
         self.border_title = "Forecast"
         self._table = DataTable(classes="forecast")
         self._table.cursor_type = "none"
-        self._table.add_columns(*("Day", "Condition", "Temperature / Feels Like", "Humidity", "Snow", "Wind / Gust", "Cloud", "UV", "Sun"))
+        self._table.add_columns(*("Day", "Condition", "Temp (Min~Max)", "Humidity", "Wind / Gust", "Cloud"))
         self.mount(self._table)
 
     def refresh_data(self, data):
@@ -88,13 +84,10 @@ class WeatherNext(Static):
             self._table.add_row(
                 ("today" if i == 0 else "+{i}".format(i=i)),
                 "{cond}".format(cond=day["conditions"]),
-                "{temp}\u00B0C / {fl}\u00B0C ({min}\u00B0C ~ {max}\u00B0C)".format(temp=day["temp"], fl=day["feelslike"], min=day["tempmin"], max=day["tempmax"]),
+                "{temp}\u00B0C ({min}\u00B0C ~ {max}\u00B0C)".format(temp=day["temp"], min=day["tempmin"], max=day["tempmax"]),
                 "{hum}%".format(hum=day["humidity"]),
-                "{snow} / {depth}m".format(snow=day["snow"], depth=day["snowdepth"]),
                 "{dir} {speed} / {gust} km/h".format(speed=day["windspeed"], gust=day["windgust"], dir=winddir(day["winddir"])),
                 "{cloud}%".format(cloud=day["cloudcover"]),
-                "{uv}".format(uv=day["uvindex"]),
-                "{rise}↑ {set}↓".format(rise=day["sunrise"], set=day["sunset"])
             )
             i += 1
 
@@ -106,6 +99,7 @@ class WeatherNext(Static):
 class Weather(Static):
     _weather_today = None
     _weather_next = None
+    _last_error = False
 
     @work(
         thread=True,
@@ -119,14 +113,17 @@ class Weather(Static):
 
     def _apply_refresh(self, error, data):
         if error is not None:
-            logger.error(
-                "Can't access weather API (%s)",
-                type(error).__name__,
-            )
+            if not self._last_error:
+                logger.error(
+                    "Can't access weather API (%s)",
+                    type(error).__name__,
+                )
+            self._last_error = True
             self._weather_today.show_error()
             self._weather_next.show_error()
             self.set_loading(False)
         else:
+            self._last_error = False
             self._weather_today.refresh_data(data)
             self._weather_next.refresh_data(data)
             self.set_loading(False)
