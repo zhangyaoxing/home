@@ -22,7 +22,7 @@ def low_humidity_sensors(data):
             humidity = float(sensor["state"])
         except (TypeError, ValueError):
             continue
-        if humidity <= config["humidityWarningThreshold"]:
+        if humidity < config["humidityWarningThreshold"]:
             low_sensors.append(sensor)
     return low_sensors
 
