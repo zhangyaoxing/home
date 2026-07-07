@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 
 from rich.text import Text
 from textual import work
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 config = load_config()
 WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
 PROB_THRESHOLD = config["probabilityWarningThreshold"]
+PROB_WARNING_LOOKAHEAD_HOURS = 6
 CHART_AXIS_STYLE = "#666666"
 
 
@@ -421,27 +422,33 @@ class Weather(Static):
             ("frozen_probability", "\u2744\ufe0f"),
             ("thunderstorm_probability", "\u26a1\ufe0f"),
         ]
-        today_hourly = data.get("hourlyDetails", [{}])[0] if data.get("hourlyDetails") else {}
+        hourly_details = data.get("hourlyDetails", [])
         messages = []
         for key, icon in prob_keys:
-            today_max = self._max_after_now(today_hourly, key)
-            if today_max > PROB_THRESHOLD:
-                messages.append(f"{icon} {today_max:.0f}% today")
+            next_max = self._max_in_next_hours(
+                hourly_details, key, PROB_WARNING_LOOKAHEAD_HOURS
+            )
+            if next_max > PROB_THRESHOLD:
+                messages.append(
+                    f"{icon} {next_max:.0f}% next {PROB_WARNING_LOOKAHEAD_HOURS}h"
+                )
         self.app.warning_manager.update("weather", messages)
 
     @staticmethod
-    def _max_after_now(hourly, key):
-        datetimes = hourly.get("datetimes", [])
-        values = hourly.get(key, [])
+    def _max_in_next_hours(hourly_details, key, hours):
         max_value = 0
-        for time, value in zip(datetimes, values):
-            try:
-                forecast_time = dt.fromisoformat(time)
-            except ValueError:
-                continue
-            now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now()
-            if forecast_time >= now and value > max_value:
-                max_value = value
+        for hourly in hourly_details:
+            datetimes = hourly.get("datetimes", [])
+            values = hourly.get(key, [])
+            for time, value in zip(datetimes, values):
+                try:
+                    forecast_time = dt.fromisoformat(time)
+                except ValueError:
+                    continue
+                now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now()
+                window_end = now + timedelta(hours=hours)
+                if now <= forecast_time <= window_end and value > max_value:
+                    max_value = value
         return max_value
 
     def on_mount(self):
