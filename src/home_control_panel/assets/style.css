@@ -156,6 +156,10 @@ Rule {
     background: #300000;
 }
 
+#weather_next.panel-warning-active .forecast {
+    background: #300000;
+}
+
 #weather_next .forecast {
     width: 100%;
 }
