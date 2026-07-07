@@ -177,6 +177,18 @@ Rule {
 #weather_next {
     border: solid greenyellow;
     width: 100%;
+    height: 60%;
+}
+
+#weather_chart {
+    border: solid greenyellow;
+    layout: horizontal;
+    width: 100%;
+    height: 40%;
+}
+
+.weather_metric_chart {
+    width: 1fr;
     height: 100%;
 }
 
@@ -185,7 +197,7 @@ Rule {
 }
 
 Weather {
-    layout: horizontal;
+    layout: vertical;
     column-span: 4;
     width: 100%;
     height: 100%;

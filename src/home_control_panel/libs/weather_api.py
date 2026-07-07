@@ -158,6 +158,37 @@ def _aggregate_day(date, entries):
     }
 
 
+def _build_hourly(entries):
+    hours = []
+    temps = []
+    precip = []
+    frozen = []
+    thunder = []
+    hums = []
+    for entry in entries:
+        d = entry["data"]
+        dt = datetime.fromisoformat(entry["time"])
+        hours.append(dt.strftime("%H:%M"))
+        t = d.get("air_temperature")
+        temps.append(t if t is not None else 0)
+        p = d.get("probability_of_precipitation", 0) or 0
+        precip.append(p)
+        f = d.get("probability_of_frozen_precipitation", 0) or 0
+        frozen.append(f)
+        th = d.get("thunderstorm_probability", 0) or 0
+        thunder.append(th)
+        h = d.get("relative_humidity")
+        hums.append(h if h is not None else 0)
+    return {
+        "hours": hours,
+        "temp": temps,
+        "precip_probability": precip,
+        "frozen_probability": frozen,
+        "thunderstorm_probability": thunder,
+        "humidity": hums,
+    }
+
+
 def _dominant_symbol(symbols):
     if not symbols:
         return "—"
@@ -223,12 +254,23 @@ def api_weather():
     current = _build_current(time_series[0])
     days_by_key = _group_by_day(time_series)
     days = []
-    for day_key in sorted(days_by_key.keys()):
+    day_keys = sorted(days_by_key.keys())
+    tomorrow_hourly = None
+    hourly_details = []
+    for i, day_key in enumerate(day_keys):
         day_data = _aggregate_day(day_key, days_by_key[day_key])
         if day_data:
             days.append(day_data)
+            hourly_details.append({
+                "date": day_key,
+                **_build_hourly(days_by_key[day_key]),
+            })
+        if i == 1:
+            tomorrow_hourly = _build_hourly(days_by_key[day_key])
 
     return None, {
         "currentConditions": current,
         "days": days,
+        "tomorrowHourly": tomorrow_hourly,
+        "hourlyDetails": hourly_details,
     }

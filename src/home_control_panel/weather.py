@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime as dt
 
+import plotext as plt
 from rich.text import Text
 from textual import work
 from textual.widgets import DataTable, Static
@@ -107,8 +108,103 @@ class WeatherNext(Static):
         self._table.add_row("Unavailable", "Weather service unavailable")
 
 
+class WeatherMetricChart(Static):
+    def __init__(self, label, key, color, ylim):
+        super().__init__(classes="weather_metric_chart")
+        self._label = label
+        self._key = key
+        self._color = color
+        self._ylim = ylim
+        self._hourly = None
+
+    def refresh_data(self, hourly):
+        self._hourly = hourly
+        self._render_chart()
+
+    def on_resize(self):
+        self._render_chart()
+
+    def _render_chart(self):
+        hourly = self._hourly
+        if not hourly or not hourly.get("hours"):
+            self.update("No data")
+            return
+        if self.size.width < 10 or self.size.height < 4:
+            return
+        width = max(self.size.width - 1, 10)
+        height = max(self.size.height - 1, 4)
+        plt.clear_data()
+        plt.plotsize(width, height)
+        x = list(range(len(hourly["hours"])))
+        plt.plot(x, hourly[self._key], color=self._color)
+        plt.ylim(*self._ylim)
+        tick_step = max(len(x) // 2, 1)
+        ticks = {i: hourly["hours"][i] for i in range(0, len(x), tick_step)}
+        plt.xticks(list(ticks.keys()), list(ticks.values()))
+        plt.grid(True, False)
+
+        chart = Text(self._label + "\n")
+        chart.append_text(Text.from_ansi(plt.build()))
+        self.update(chart)
+
+
+class WeatherChart(Static):
+    _metrics = None
+    _hourly_days = None
+    _day_index = 0
+
+    def on_mount(self):
+        self.border_title = "Details"
+        self._metrics = [
+            WeatherMetricChart("Temp °C", "temp", (255, 100, 100), (0, 35)),
+            WeatherMetricChart("Humidity %", "humidity", (100, 100, 255), (0, 100)),
+            WeatherMetricChart("Rain %", "precip_probability", (100, 200, 255), (0, 100)),
+            WeatherMetricChart("Snow %", "frozen_probability", (200, 200, 255), (0, 100)),
+            WeatherMetricChart("Thunder %", "thunderstorm_probability", (255, 255, 100), (0, 100)),
+        ]
+        for metric in self._metrics:
+            self.mount(metric)
+        self.set_interval(30, self.show_next_day)
+        if self._hourly_days is not None:
+            self.refresh_data(self._hourly_days)
+
+    def refresh_data(self, hourly_days):
+        self._hourly_days = hourly_days or []
+        self._day_index = 0
+        self._show_current_day()
+
+    def show_next_day(self):
+        if not self._hourly_days:
+            return
+        self._day_index = (self._day_index + 1) % len(self._hourly_days)
+        self._show_current_day()
+
+    def _show_current_day(self):
+        if self._metrics is None:
+            return
+        if not self._hourly_days:
+            for metric in self._metrics:
+                metric.refresh_data(None)
+            return
+        hourly = self._hourly_days[self._day_index]
+        day_label = self._format_day_label(hourly.get("date"), self._day_index)
+        self.border_title = f"Details {day_label}"
+        self.border_subtitle = ""
+        for metric in self._metrics:
+            metric.refresh_data(hourly)
+
+    @staticmethod
+    def _format_day_label(date, index):
+        if index == 0:
+            return "Today"
+        if not date:
+            return ""
+        return dt.strptime(date, "%Y-%m-%d").strftime("%a")
+
+
 class Weather(Static):
     _weather_next = None
+    _weather_chart = None
     _last_error = False
 
     @work(
@@ -134,6 +230,7 @@ class Weather(Static):
         else:
             self._last_error = False
             self._weather_next.refresh_data(data)
+            self._weather_chart.refresh_data(data.get("hourlyDetails"))
             self._check_probability_warning(data)
             self.set_loading(False)
 
@@ -158,7 +255,9 @@ class Weather(Static):
         self.border_title = "Weather Forecast"
         self.border_subtitle = "Stockholm"
         self._weather_next = WeatherNext(id="weather_next")
+        self._weather_chart = WeatherChart(id="weather_chart")
         self.mount(self._weather_next)
+        self.mount(self._weather_chart)
 
         self.set_timer(1, self.refresh_data)
         self.set_interval(config["weatherRefreshInterval"], self.refresh_data)
