@@ -38,8 +38,8 @@ class SensorRow(Horizontal):
         value = f'{self.sensor["state"]}{self.sensor["unit"]}'
         if self.exceeded:
             yield Static(
-                f"[bold red]{escape(name)}[/]",
-                classes="sensor-name sensor-exceeded",
+                escape(name),
+                classes="sensor-name",
             )
             yield Static(
                 f"[bold red]{escape(value)}[/]",

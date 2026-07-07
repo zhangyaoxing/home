@@ -21,7 +21,7 @@ def winddir(angle):
 
 def _fmt_prob(value):
     return Text(
-        "{p:.0f}%".format(p=value), style="red" if value > PROB_THRESHOLD else ""
+        "{p:.0f}%".format(p=value), style="bold red" if value > PROB_THRESHOLD else ""
     )
 
 
