@@ -106,24 +106,13 @@ class ScheduleLine(Horizontal):
             for location in row.get("FromLocation", [])
         )
 
-        if now > advertised_time:
-            delta = (now - advertised_time).total_seconds()
-            to_station = "/".join(
-                self.stations.get(location, location)
-                for location in row.get("ToLocation", [])
-            )
-            route = f"{from_station} → {to_station}"
-            route = f"[#808080]{route}[/#808080]"
-            track = f"[#808080]{track}[/#808080]"
-            departure = f"[#808080]{int(delta / 60)}m ago[/#808080]"
-        else:
-            delta = (advertised_time - now).total_seconds()
-            to_station = "/".join(
-                f"[bold][green]{self.stations.get(location, location)}[/green][/bold]"
-                for location in row.get("ToLocation", [])
-            )
-            route = f"{from_station} → {to_station}"
-            departure = f"{int(delta / 60)} min"
+        delta = (advertised_time - now).total_seconds()
+        to_station = "/".join(
+            f"[bold][green]{self.stations.get(location, location)}[/green][/bold]"
+            for location in row.get("ToLocation", [])
+        )
+        route = f"{from_station} → {to_station}"
+        departure = f"{int(delta / 60)} min"
 
         self.query_one(".schedule-route", Static).update(route)
         self.query_one(".schedule-track", Static).update(track)
@@ -261,15 +250,12 @@ class TrainSchedule(Static):
                 classes="schedule-header",
             )
         )
-        passed_count = 0
         for schedule in schedules:
             advertised_time = datetime.fromisoformat(
                 schedule["AdvertisedTimeAtLocation"]
             )
             if now > advertised_time:
-                passed_count += 1
-                if passed_count > 1:
-                    continue
+                continue
             self.mount(ScheduleEntry(schedule, self.stations))
 
         self.set_loading(False)
