@@ -111,7 +111,7 @@ class Sensors(Static):
         self._apply_humidity_warning(data, low_sensors)
 
     def on_mount(self):
-        self.border_title = "Sensors"
+        self.border_title = "In-House Sensors"
         self.set_loading(True)
         self.set_timer(1, self.refresh_data)
         self.set_interval(config["sensorRefreshInterval"], self.refresh_data)
