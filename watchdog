@@ -40,7 +40,8 @@ def start_app():
 
 
 def pull_changes():
-    """Pull remote changes into the local branch. Returns True on success."""
+    """Pull remote changes. Returns (success, pyproject_changed)."""
+    before = _git_rev_parse("HEAD")
     result = subprocess.run(
         ["git", "pull", "--ff-only", "--quiet"],
         capture_output=True,
@@ -49,8 +50,32 @@ def pull_changes():
     if result.returncode != 0:
         stderr = result.stderr.strip()
         print(f"{timestamp()} Pull failed: {stderr}")
+        return False, False
+    after = _git_rev_parse("HEAD")
+    pyproject_changed = _file_changed_between(before, after, "pyproject.toml")
+    return True, pyproject_changed
+
+
+def _git_rev_parse(revision):
+    result = subprocess.run(
+        ["git", "rev-parse", revision],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def _file_changed_between(before, after, path):
+    if before is None or after is None or before == after:
         return False
-    return True
+    result = subprocess.run(
+        ["git", "diff", "--name-only", before, after, "--", path],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
 
 
 def install_dependencies():
@@ -92,11 +117,13 @@ def timestamp():
     return time.strftime("%H:%M:%S")
 
 
-def run_loop():
-    if not install_dependencies():
-        print(f"{timestamp()} Initial dependency install failed. Stopping.")
-        return
+def update_dependencies_if_needed(pyproject_changed):
+    if not pyproject_changed:
+        return True
+    return install_dependencies()
 
+
+def run_loop():
     pid = start_app()
     print(f"{timestamp()} App started (PID: {pid}).")
 
@@ -116,8 +143,9 @@ def run_loop():
                     time.sleep(CHECK_INTERVAL)
 
             print(f"{timestamp()} Changes detected, pulling...")
-            if pull_changes():
-                if install_dependencies():
+            pulled, pyproject_changed = pull_changes()
+            if pulled:
+                if update_dependencies_if_needed(pyproject_changed):
                     pid = _restart()
                 else:
                     print(f"{timestamp()} Skipping restart due to install failure.")
@@ -127,8 +155,9 @@ def run_loop():
 
         if has_changes():
             print(f"{timestamp()} Changes detected, pulling...")
-            if pull_changes():
-                if install_dependencies():
+            pulled, pyproject_changed = pull_changes()
+            if pulled:
+                if update_dependencies_if_needed(pyproject_changed):
                     kill_app(pid)
                     pid = _restart()
                 else:
