@@ -61,6 +61,9 @@ class Sensors(Static):
         super().__init__(*args, **kwargs)
         self._sensor_signature = None
 
+    def compose(self) -> ComposeResult:
+        yield Static()
+
     def _apply_humidity_warning(self, data, low_sensors=None):
         if low_sensors is None:
             low_sensors = low_humidity_sensors(data)

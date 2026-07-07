@@ -37,6 +37,9 @@ class TrainStationMessage(Static):
         super().__init__(*args, **kwargs)
         self.last_refresh = datetime.min
 
+    def compose(self) -> ComposeResult:
+        yield Static()
+
     @work(
         thread=True,
         group="train-message-refresh",
@@ -190,6 +193,9 @@ class TrainSchedule(Static):
         super().__init__(*args, **kwargs)
         self.stations = {}
         self.last_refresh = datetime.min
+
+    def compose(self) -> ComposeResult:
+        yield Static()
 
     @work(
         thread=True,

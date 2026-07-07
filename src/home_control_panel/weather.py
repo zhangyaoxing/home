@@ -370,13 +370,8 @@ class Weather(Static):
         return max_value
 
     def on_mount(self):
-        self.set_loading(True)
-        self.border_title = "Weather Forecast"
-        self.border_subtitle = "Stockholm"
-        self._weather_next = WeatherNext(id="weather_next")
-        self._weather_chart = WeatherChart(id="weather_chart")
-        self.mount(self._weather_next)
-        self.mount(self._weather_chart)
+        self._weather_next = self.app.query_one("#weather_next", WeatherNext)
+        self._weather_chart = self.app.query_one("#weather_chart", WeatherChart)
 
         self.set_timer(1, self.refresh_data)
         self.set_interval(config["weatherRefreshInterval"], self.refresh_data)

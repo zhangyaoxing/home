@@ -1,8 +1,8 @@
 Screen {
     layout: grid;
-    grid-size: 4 2;
-    grid-columns: 1fr 1fr 1fr 1fr;
-    grid-rows: 1fr 1fr;
+    grid-size: 3 3;
+    grid-columns: 35% 39% 26%;
+    grid-rows: 1fr 1fr 30%;
 }
 
 #train {
@@ -13,7 +13,8 @@ Screen {
 }
 
 #schedule {
-    width: 40%;
+    row-span: 2;
+    width: 100%;
     height: 100%;
     border: solid greenyellow;
     overflow: hidden;
@@ -70,7 +71,8 @@ Screen {
 }
 
 #message {
-    width: 60%;
+    column-span: 2;
+    width: 100%;
     overflow: hidden;
     height: 100%;
     border: solid greenyellow;
@@ -127,14 +129,15 @@ Rule {
 #weather_next {
     border: solid greenyellow;
     width: 100%;
-    height: 65%;
+    height: 100%;
 }
 
 #weather_chart {
     border: solid greenyellow;
     layout: horizontal;
+    column-span: 3;
     width: 100%;
-    height: 35%;
+    height: 100%;
 }
 
 .weather_metric_chart {
@@ -165,11 +168,7 @@ Rule {
 }
 
 Weather {
-    layout: vertical;
-    column-span: 4;
-    width: 100%;
-    height: 100%;
-    border: none;
+    display: none;
 }
 WeatherElement {
     width: 100%;
