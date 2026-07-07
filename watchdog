@@ -12,10 +12,24 @@ RETRY_DELAY = 30
 
 
 def has_changes():
-    return (
+    if (
         subprocess.run(["git", "diff", "--quiet"]).returncode != 0
         or subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0
+    ):
+        return True
+    return _remote_has_incoming()
+
+
+def _remote_has_incoming():
+    subprocess.run(["git", "fetch", "--quiet"])
+    result = subprocess.run(
+        ["git", "rev-list", "--count", "HEAD..@{u}"],
+        capture_output=True,
+        text=True,
     )
+    if result.returncode != 0:
+        return False
+    return int(result.stdout.strip()) > 0
 
 
 def start_app():
