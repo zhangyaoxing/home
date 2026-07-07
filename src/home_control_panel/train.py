@@ -268,7 +268,7 @@ class TrainSchedule(Static):
         self.last_refresh = datetime.now()
 
     def on_mount(self):
-        self.border_title = "Schedules"
+        self.border_title = "Train Schedules"
         self.set_loading(True)
         self.set_timer(1, self.load_stations)
         self.set_interval(config["stationUpdateInterval"], self.load_stations)
