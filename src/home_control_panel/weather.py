@@ -126,15 +126,22 @@ class WeatherNext(Static):
 
 
 class WeatherMetricChart(Canvas):
-    def __init__(self, label, key, color, ylim):
+    def __init__(self, series, ylim, right_ylim=None):
         super().__init__(
             default_hires_mode=HiResMode.BRAILLE,
             classes="weather_metric_chart",
         )
-        self._label = label
-        self._key = key
-        self._style = "#{:02x}{:02x}{:02x}".format(*color)
+        self._series = [
+            {
+                "label": s["label"],
+                "key": s["key"],
+                "style": "#{:02x}{:02x}{:02x}".format(*s["color"]),
+                "axis": s.get("axis", "left"),
+            }
+            for s in series
+        ]
         self._ylim = ylim
+        self._right_ylim = right_ylim
         self._hourly = None
 
     def refresh_data(self, hourly):
@@ -153,14 +160,22 @@ class WeatherMetricChart(Canvas):
         if self.size.width < 10 or self.size.height < 4:
             return
 
-        values = hourly[self._key]
-        if not values:
+        series_data = []
+        for s in self._series:
+            values = hourly.get(s["key"])
+            if values:
+                series_data.append({**s, "values": values})
+
+        if not series_data:
             self.refresh()
             return
 
+        has_right_axis = self._right_ylim is not None
         axis_x = 4
         plot_left = axis_x + 1
         plot_right = self.size.width - 1
+        if has_right_axis:
+            plot_right = self.size.width - 5
         plot_top = 1
         plot_bottom = self.size.height - 2
         if plot_right <= plot_left or plot_bottom <= plot_top:
@@ -168,12 +183,14 @@ class WeatherMetricChart(Canvas):
             return
 
         with self.batch_refresh():
-            title = f"{self._label} "
-            value_range = f"{min(values):g}-{max(values):g}"
+            title_parts = []
+            for s in series_data:
+                v = s["values"]
+                title_parts.append(f"[{s['style']}]{s['label']} {min(v):g}-{max(v):g}[/]")
             self.write_text(
                 self.size.width // 2,
                 0,
-                f"{title}[{self._style}]{value_range}[/]",
+                " ".join(title_parts),
                 align=TextAlign.CENTER,
             )
             self.draw_line(
@@ -184,6 +201,16 @@ class WeatherMetricChart(Canvas):
                 char="│",
                 style=CHART_AXIS_STYLE,
             )
+            if has_right_axis:
+                axis_right_x = plot_right + 1
+                self.draw_line(
+                    axis_right_x,
+                    plot_top,
+                    axis_right_x,
+                    plot_bottom,
+                    char="│",
+                    style=CHART_AXIS_STYLE,
+                )
             self.draw_line(
                 axis_x,
                 plot_bottom,
@@ -198,36 +225,64 @@ class WeatherMetricChart(Canvas):
                 char="└",
                 style=CHART_AXIS_STYLE,
             )
+            if has_right_axis:
+                self.draw_line(
+                    plot_right,
+                    plot_bottom,
+                    axis_right_x,
+                    plot_bottom,
+                    char="─",
+                    style=CHART_AXIS_STYLE,
+                )
+                self.set_pixel(
+                    axis_right_x,
+                    plot_bottom,
+                    char="┘",
+                    style=CHART_AXIS_STYLE,
+                )
 
-            y_min, y_max = self._ylim
-            y_span = y_max - y_min
-            x_span = max(len(values) - 1, 1)
-            points = []
-            for i, value in enumerate(values):
-                x = plot_left + (i / x_span) * (plot_right - plot_left)
-                normalized = (value - y_min) / y_span if y_span else 0
-                normalized = min(max(normalized, 0), 1)
-                y = plot_bottom - normalized * (plot_bottom - plot_top)
-                points.append((x, y))
+            for s in series_data:
+                values = s["values"]
+                if s["axis"] == "right":
+                    y_min, y_max = self._right_ylim
+                else:
+                    y_min, y_max = self._ylim
+                y_span = y_max - y_min
+                x_span = max(len(values) - 1, 1)
+                points = []
+                for i, value in enumerate(values):
+                    x = plot_left + (i / x_span) * (plot_right - plot_left)
+                    normalized = (value - y_min) / y_span if y_span else 0
+                    normalized = min(max(normalized, 0), 1)
+                    y = plot_bottom - normalized * (plot_bottom - plot_top)
+                    points.append((x, y))
 
-            lines = [
-                (x0, y0, x1, y1)
-                for (x0, y0), (x1, y1) in zip(points, points[1:])
-            ]
-            self.draw_hires_lines(lines, hires_mode=HiResMode.BRAILLE, style=self._style)
+                lines = [
+                    (x0, y0, x1, y1)
+                    for (x0, y0), (x1, y1) in zip(points, points[1:])
+                ]
+                self.draw_hires_lines(lines, hires_mode=HiResMode.BRAILLE, style=s["style"])
 
             hours = hourly["hours"]
-            self._draw_y_ticks(y_min, y_max, plot_top, plot_bottom, axis_x)
+            self._draw_y_ticks(self._ylim, plot_top, plot_bottom, axis_x, "left")
+            if has_right_axis:
+                self._draw_y_ticks(self._right_ylim, plot_top, plot_bottom, axis_right_x, "right")
             self._draw_x_ticks(hours, plot_left, plot_right, plot_bottom)
         self.refresh()
 
-    def _draw_y_ticks(self, y_min, y_max, plot_top, plot_bottom, axis_x):
+    def _draw_y_ticks(self, ylim, plot_top, plot_bottom, axis_x, side):
+        y_min, y_max = ylim
         for value in self._tick_values(y_min, y_max, 3):
             normalized = (value - y_min) / (y_max - y_min) if y_max != y_min else 0
             y = round(plot_bottom - normalized * (plot_bottom - plot_top))
-            label = f"{value:g}".rjust(axis_x)
-            self.write_text(0, y, f"[dim]{label}[/]")
-            self.set_pixel(axis_x, y, char="┤", style=CHART_AXIS_STYLE)
+            if side == "left":
+                label = f"{value:g}".rjust(axis_x)
+                self.write_text(0, y, f"[dim]{label}[/]")
+                self.set_pixel(axis_x, y, char="┤", style=CHART_AXIS_STYLE)
+            else:
+                label = f"{value:g}".ljust(3)
+                self.write_text(axis_x + 1, y, f"[dim]{label}[/]")
+                self.set_pixel(axis_x, y, char="├", style=CHART_AXIS_STYLE)
 
     def _draw_x_ticks(self, hours, plot_left, plot_right, plot_bottom):
         if not hours:
@@ -266,11 +321,22 @@ class WeatherChart(Static):
     def on_mount(self):
         self.border_title = "Weather Details"
         self._metrics = [
-            WeatherMetricChart("Temp °C", "temp", (255, 100, 100), (0, 35)),
-            WeatherMetricChart("Humidity %", "humidity", (100, 100, 255), (0, 100)),
-            WeatherMetricChart("Rain %", "precip_probability", (100, 200, 255), (0, 100)),
-            WeatherMetricChart("Snow %", "frozen_probability", (200, 200, 255), (0, 100)),
-            WeatherMetricChart("Thunder %", "thunderstorm_probability", (255, 255, 100), (0, 100)),
+            WeatherMetricChart(
+                [
+                    {"label": "Temp", "key": "temp", "color": (255, 100, 100)},
+                    {"label": "Humidity", "key": "humidity", "color": (100, 100, 255), "axis": "right"},
+                ],
+                (0, 35),
+                right_ylim=(0, 100),
+            ),
+            WeatherMetricChart(
+                [
+                    {"label": "Rain", "key": "precip_probability", "color": (100, 200, 255)},
+                    {"label": "Snow", "key": "frozen_probability", "color": (200, 200, 255)},
+                    {"label": "Thunder", "key": "thunderstorm_probability", "color": (255, 255, 100)},
+                ],
+                (0, 100),
+            ),
         ]
         for metric in self._metrics:
             self.mount(metric)
