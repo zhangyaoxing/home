@@ -13,7 +13,7 @@ dependencies = [
     "python-dotenv==1.2.1",
     "requests==2.32.5",
     "textual==6.5.0",
-    "textual-plotext==1.0.1",
+    "textual-hires-canvas==0.14.0",
 ]
 
 [project.optional-dependencies]

@@ -4,7 +4,7 @@ from datetime import datetime as dt
 from rich.text import Text
 from textual import work
 from textual.widgets import DataTable, Static
-from textual_plotext import PlotextPlot
+from textual_hires_canvas import Canvas, HiResMode, TextAlign
 
 from home_control_panel.libs.weather_api import api_weather
 from home_control_panel.libs.utils import load_config
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 config = load_config()
 WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
 PROB_THRESHOLD = config["probabilityWarningThreshold"]
+CHART_AXIS_STYLE = "#666666"
 
 
 def winddir(angle):
@@ -124,12 +125,15 @@ class WeatherNext(Static):
         self._table.add_row("Unavailable", "Weather service unavailable")
 
 
-class WeatherMetricChart(PlotextPlot):
+class WeatherMetricChart(Canvas):
     def __init__(self, label, key, color, ylim):
-        super().__init__(classes="weather_metric_chart")
+        super().__init__(
+            default_hires_mode=HiResMode.BRAILLE,
+            classes="weather_metric_chart",
+        )
         self._label = label
         self._key = key
-        self._color = color
+        self._style = "#{:02x}{:02x}{:02x}".format(*color)
         self._ylim = ylim
         self._hourly = None
 
@@ -142,25 +146,114 @@ class WeatherMetricChart(PlotextPlot):
 
     def _render_chart(self):
         hourly = self._hourly
+        self.reset(size=self.size, refresh=False)
         if not hourly or not hourly.get("hours"):
-            self.plt.clear_data()
             self.refresh()
             return
         if self.size.width < 10 or self.size.height < 4:
             return
-        width = max(self.size.width - 1, 10)
-        height = max(self.size.height - 1, 4)
-        self.plt.clear_data()
-        self.plt.plotsize(width, height)
-        x = list(range(len(hourly["hours"])))
-        self.plt.plot(x, hourly[self._key], color=self._color)
-        self.plt.ylim(*self._ylim)
-        tick_step = max(len(x) // 2, 1)
-        ticks = {i: hourly["hours"][i] for i in range(0, len(x), tick_step)}
-        self.plt.xticks(list(ticks.keys()), list(ticks.values()))
-        self.plt.grid(True, False)
-        self.plt.title(self._label)
+
+        values = hourly[self._key]
+        if not values:
+            self.refresh()
+            return
+
+        axis_x = 4
+        plot_left = axis_x + 1
+        plot_right = self.size.width - 1
+        plot_top = 1
+        plot_bottom = self.size.height - 2
+        if plot_right <= plot_left or plot_bottom <= plot_top:
+            self.refresh()
+            return
+
+        with self.batch_refresh():
+            self.write_text(
+                self.size.width // 2,
+                0,
+                f"{self._label} {min(values):g}-{max(values):g}",
+                align=TextAlign.CENTER,
+            )
+            self.draw_line(
+                axis_x,
+                plot_top,
+                axis_x,
+                plot_bottom,
+                char="│",
+                style=CHART_AXIS_STYLE,
+            )
+            self.draw_line(
+                axis_x,
+                plot_bottom,
+                plot_right,
+                plot_bottom,
+                char="─",
+                style=CHART_AXIS_STYLE,
+            )
+            self.set_pixel(
+                axis_x,
+                plot_bottom,
+                char="└",
+                style=CHART_AXIS_STYLE,
+            )
+
+            y_min, y_max = self._ylim
+            y_span = y_max - y_min
+            x_span = max(len(values) - 1, 1)
+            points = []
+            for i, value in enumerate(values):
+                x = plot_left + (i / x_span) * (plot_right - plot_left)
+                normalized = (value - y_min) / y_span if y_span else 0
+                normalized = min(max(normalized, 0), 1)
+                y = plot_bottom - normalized * (plot_bottom - plot_top)
+                points.append((x, y))
+
+            lines = [
+                (x0, y0, x1, y1)
+                for (x0, y0), (x1, y1) in zip(points, points[1:])
+            ]
+            self.draw_hires_lines(lines, hires_mode=HiResMode.BRAILLE, style=self._style)
+
+            hours = hourly["hours"]
+            self._draw_y_ticks(y_min, y_max, plot_top, plot_bottom, axis_x)
+            self._draw_x_ticks(hours, plot_left, plot_right, plot_bottom)
         self.refresh()
+
+    def _draw_y_ticks(self, y_min, y_max, plot_top, plot_bottom, axis_x):
+        for value in self._tick_values(y_min, y_max, 3):
+            normalized = (value - y_min) / (y_max - y_min) if y_max != y_min else 0
+            y = round(plot_bottom - normalized * (plot_bottom - plot_top))
+            label = f"{value:g}".rjust(axis_x)
+            self.write_text(0, y, f"[dim]{label}[/]")
+            self.set_pixel(axis_x, y, char="┤", style=CHART_AXIS_STYLE)
+
+    def _draw_x_ticks(self, hours, plot_left, plot_right, plot_bottom):
+        if not hours:
+            return
+        for index in self._tick_indexes(len(hours), 4):
+            normalized = index / max(len(hours) - 1, 1)
+            x = round(plot_left + normalized * (plot_right - plot_left))
+            self.set_pixel(x, plot_bottom, char="┬", style=CHART_AXIS_STYLE)
+            align = TextAlign.CENTER
+            if index == 0:
+                align = TextAlign.LEFT
+            elif index == len(hours) - 1:
+                align = TextAlign.RIGHT
+            self.write_text(x, self.size.height - 1, f"[dim]{hours[index]}[/]", align=align)
+
+    @staticmethod
+    def _tick_values(start, end, count):
+        if count <= 1:
+            return [start]
+        step = (end - start) / (count - 1)
+        return [start + step * i for i in range(count)]
+
+    @staticmethod
+    def _tick_indexes(length, count):
+        if length <= 1:
+            return [0]
+        count = min(count, length)
+        return sorted({round(i * (length - 1) / (count - 1)) for i in range(count)})
 
 
 class WeatherChart(Static):
