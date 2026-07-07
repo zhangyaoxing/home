@@ -3,9 +3,7 @@ import logging
 from rich.markup import escape
 from textual import work
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal
-from textual.screen import ModalScreen
 from textual.widgets import Static
 
 from home_control_panel.libs.ha_api import api_ha
@@ -28,66 +26,6 @@ def low_humidity_sensors(data):
             low_sensors.append(sensor)
     return low_sensors
 
-
-class HumidityWarningPanel(Static):
-    def __init__(self, sensors=None, title=None, messages=None):
-        super().__init__(id="humidity-warning")
-        self.sensors = sensors
-        self._title = title
-        self._messages = messages
-        self._blink_timer = None
-
-    def compose(self) -> ComposeResult:
-        title = self._title or "Warning"
-        yield Static(title, classes="humidity-warning-title")
-        yield Static(
-            "██\n██\n██\n██\n\n██",
-            id="humidity-warning-icon",
-        )
-        yield Static(id="humidity-warning-readings")
-
-    def toggle_warning_icon(self):
-        self.query_one("#humidity-warning-icon").toggle_class(
-            "humidity-warning-icon-off"
-        )
-
-    def update_sensors(self, sensors):
-        self.sensors = sensors
-        readings = "\n".join(
-            f'[bold]{escape(sensor["name"])}:[/] '
-            f'{escape(str(sensor["state"]))}{escape(str(sensor["unit"]))}'
-            for sensor in sensors
-        )
-        self.query_one("#humidity-warning-readings", Static).update(readings)
-
-    def on_mount(self):
-        if self._messages is not None:
-            self.query_one("#humidity-warning-readings", Static).update(
-                "\n".join(self._messages)
-            )
-        elif self.sensors is not None:
-            self.update_sensors(self.sensors)
-        self._blink_timer = self.set_interval(0.5, self.toggle_warning_icon)
-
-    def on_unmount(self):
-        if self._blink_timer is not None:
-            self._blink_timer.stop()
-            self._blink_timer = None
-
-
-class HumidityWarningScreen(ModalScreen):
-    BINDINGS = [
-        Binding("q", "app.quit", "Quit", priority=True),
-    ]
-
-    def __init__(self, sensors=None, title=None, messages=None):
-        super().__init__()
-        self._sensors = sensors
-        self._title = title
-        self._messages = messages
-
-    def compose(self) -> ComposeResult:
-        yield HumidityWarningPanel(self._sensors, self._title, self._messages)
 
 class SensorRow(Horizontal):
     def __init__(self, sensor, exceeded=False):

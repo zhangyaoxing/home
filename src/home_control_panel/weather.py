@@ -47,6 +47,22 @@ def _fmt_vis(v):
     return "{v:04.1f} km".format(v=v)
 
 
+def _format_day_label(date, index):
+    return _format_day_label_with_weekday(date, index, "%A")
+
+
+def _format_forecast_day_label(date, index):
+    return _format_day_label_with_weekday(date, index, "%a")
+
+
+def _format_day_label_with_weekday(date, index, weekday_format):
+    if index == 0:
+        return "Today"
+    if not date:
+        return ""
+    return f"{dt.strptime(date, '%Y-%m-%d').strftime(weekday_format)} +{index}"
+
+
 class WeatherNext(Static):
     _table = None
 
@@ -87,7 +103,7 @@ class WeatherNext(Static):
         )
         for i, day in enumerate(data["days"]):
             self._table.add_row(
-                "Today" if i == 0 else dt.strptime(day["date"], "%Y-%m-%d").strftime("%a"),
+                _format_forecast_day_label(day["date"], i),
                 day["conditions"],
                 "{t} ({tmin} ~ {tmax})".format(
                     t=_fmt_temp(day["temp"]),
@@ -195,11 +211,7 @@ class WeatherChart(Static):
 
     @staticmethod
     def _format_day_label(date, index):
-        if index == 0:
-            return "Today"
-        if not date:
-            return ""
-        return dt.strptime(date, "%Y-%m-%d").strftime("%a")
+        return _format_day_label(date, index)
 
 
 class Weather(Static):
@@ -240,15 +252,28 @@ class Weather(Static):
             ("frozen_probability", "\u2744\ufe0f"),
             ("thunderstorm_probability", "\u26a1\ufe0f"),
         ]
-        current = data["currentConditions"]
-        today = data["days"][0] if data["days"] else {}
+        today_hourly = data.get("hourlyDetails", [{}])[0] if data.get("hourlyDetails") else {}
         messages = []
         for key, icon in prob_keys:
-            if current.get(key, 0) > PROB_THRESHOLD:
-                messages.append(f"{icon} {current[key]:.0f}% now")
-            elif today.get(key, 0) > PROB_THRESHOLD:
-                messages.append(f"{icon} {today[key]:.0f}% today")
+            today_max = self._max_after_now(today_hourly, key)
+            if today_max > PROB_THRESHOLD:
+                messages.append(f"{icon} {today_max:.0f}% today")
         self.app.warning_manager.update("weather", messages)
+
+    @staticmethod
+    def _max_after_now(hourly, key):
+        datetimes = hourly.get("datetimes", [])
+        values = hourly.get(key, [])
+        max_value = 0
+        for time, value in zip(datetimes, values):
+            try:
+                forecast_time = dt.fromisoformat(time)
+            except ValueError:
+                continue
+            now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now()
+            if forecast_time >= now and value > max_value:
+                max_value = value
+        return max_value
 
     def on_mount(self):
         self.set_loading(True)

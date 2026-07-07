@@ -160,6 +160,7 @@ def _aggregate_day(date, entries):
 
 def _build_hourly(entries):
     hours = []
+    datetimes = []
     temps = []
     precip = []
     frozen = []
@@ -169,6 +170,7 @@ def _build_hourly(entries):
         d = entry["data"]
         dt = datetime.fromisoformat(entry["time"])
         hours.append(dt.strftime("%H:%M"))
+        datetimes.append(entry["time"])
         t = d.get("air_temperature")
         temps.append(t if t is not None else 0)
         p = d.get("probability_of_precipitation", 0) or 0
@@ -181,6 +183,7 @@ def _build_hourly(entries):
         hums.append(h if h is not None else 0)
     return {
         "hours": hours,
+        "datetimes": datetimes,
         "temp": temps,
         "precip_probability": precip,
         "frozen_probability": frozen,
