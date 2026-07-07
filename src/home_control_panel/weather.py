@@ -18,8 +18,29 @@ def winddir(angle):
 
 
 def _fmt_prob(value):
-    s = "{p}%".format(p=value)
-    return Text(s, style="red" if value > PROB_THRESHOLD else "")
+    return Text("{p:.0f}%".format(p=value),
+               style="red" if value > PROB_THRESHOLD else "")
+
+
+def _fmt_temp(t):
+    return "{t:05.2f}\u00b0C".format(t=t)
+
+
+def _fmt_hum(h):
+    return "{h:2.0f}%".format(h=h)
+
+
+def _fmt_wind(speed, gust, wdir):
+    return "{dir} {speed:04.1f} / {gust:04.1f} km/h".format(
+        dir=winddir(wdir), speed=speed, gust=gust)
+
+
+def _fmt_cloud(c):
+    return "{c:3.0f}%".format(c=c)
+
+
+def _fmt_vis(v):
+    return "{v:04.1f} km".format(v=v)
 
 
 class WeatherNext(Static):
@@ -42,15 +63,11 @@ class WeatherNext(Static):
         self._table.add_row(
             "Now",
             current["conditions"],
-            "{temp}\u00B0C".format(temp=current["temp"]),
-            "{hum}%".format(hum=current["humidity"]),
-            "{dir} {speed} / {gust} km/h".format(
-                speed=current["windspeed"],
-                gust=current["windgust"],
-                dir=winddir(current["winddir"]),
-            ),
-            "{cloud}%".format(cloud=current["cloudcover"]),
-            "{vis} km".format(vis=current["visibility"]),
+            _fmt_temp(current["temp"]),
+            _fmt_hum(current["humidity"]),
+            _fmt_wind(current["windspeed"], current["windgust"], current["winddir"]),
+            _fmt_cloud(current["cloudcover"]),
+            _fmt_vis(current["visibility"]),
             _fmt_prob(current["precip_probability"]),
             _fmt_prob(current["frozen_probability"]),
             _fmt_prob(current["thunderstorm_probability"]),
@@ -59,17 +76,15 @@ class WeatherNext(Static):
             self._table.add_row(
                 "today" if i == 0 else "+{i}".format(i=i),
                 day["conditions"],
-                "{temp}\u00B0C ({min}\u00B0C ~ {max}\u00B0C)".format(
-                    temp=day["temp"], min=day["tempmin"], max=day["tempmax"],
+                "{t} ({tmin} ~ {tmax})".format(
+                    t=_fmt_temp(day["temp"]),
+                    tmin=_fmt_temp(day["tempmin"]),
+                    tmax=_fmt_temp(day["tempmax"]),
                 ),
-                "{hum}%".format(hum=day["humidity"]),
-                "{dir} {speed} / {gust} km/h".format(
-                    speed=day["windspeed"],
-                    gust=day["windgust"],
-                    dir=winddir(day["winddir"]),
-                ),
-                "{cloud}%".format(cloud=day["cloudcover"]),
-                "{vis} km".format(vis=day["visibility"]),
+                _fmt_hum(day["humidity"]),
+                _fmt_wind(day["windspeed"], day["windgust"], day["winddir"]),
+                _fmt_cloud(day["cloudcover"]),
+                _fmt_vis(day["visibility"]),
                 _fmt_prob(day["precip_probability"]),
                 _fmt_prob(day["frozen_probability"]),
                 _fmt_prob(day["thunderstorm_probability"]),
