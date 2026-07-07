@@ -38,7 +38,7 @@ class HumidityWarningPanel(Static):
         self._blink_timer = None
 
     def compose(self) -> ComposeResult:
-        title = self._title or "LOW HUMIDITY"
+        title = self._title or "Warning"
         yield Static(title, classes="humidity-warning-title")
         yield Static(
             "██\n██\n██\n██\n\n██",
@@ -121,59 +121,17 @@ class SensorRow(Horizontal):
 class Sensors(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._low_sensors = []
-        self._warning_timer = None
         self._sensor_signature = None
-
-    def _warning_screen(self):
-        return next(
-            (
-                screen
-                for screen in self.app.screen_stack
-                if isinstance(screen, HumidityWarningScreen)
-            ),
-            None,
-        )
-
-    def _schedule_warning_toggle(self):
-        self._warning_timer = self.set_timer(
-            config["humidityWarningInterval"],
-            self._toggle_warning,
-        )
-
-    def _toggle_warning(self):
-        self._warning_timer = None
-        if not self._low_sensors:
-            return
-
-        warning_screen = self._warning_screen()
-        if warning_screen is None:
-            self.app.push_screen(HumidityWarningScreen(self._low_sensors))
-        else:
-            warning_screen.dismiss()
-        self._schedule_warning_toggle()
-
-    def _stop_warning_cycle(self):
-        if self._warning_timer is not None:
-            self._warning_timer.stop()
-            self._warning_timer = None
 
     def _apply_humidity_warning(self, data, low_sensors=None):
         if low_sensors is None:
             low_sensors = low_humidity_sensors(data)
-        self._low_sensors = low_sensors
-        warning_screen = self._warning_screen()
-        if not low_sensors:
-            if warning_screen is not None:
-                warning_screen.dismiss()
-            self._stop_warning_cycle()
-        elif warning_screen is not None:
-            warning_screen.query_one(HumidityWarningPanel).update_sensors(
-                low_sensors
+        messages = []
+        for sensor in low_sensors:
+            messages.append(
+                f'{sensor["name"]}: {sensor["state"]}{sensor["unit"]}'
             )
-        elif self._warning_timer is None:
-            self.app.push_screen(HumidityWarningScreen(low_sensors))
-            self._schedule_warning_toggle()
+        self.app.warning_manager.update("sensors", messages)
 
     @work(
         thread=True,

@@ -7,11 +7,6 @@ from textual.widgets import DataTable, Static
 
 from home_control_panel.libs.weather_api import api_weather
 from home_control_panel.libs.utils import load_config
-from home_control_panel.sensors import HumidityWarningScreen
-
-
-class WeatherWarningScreen(HumidityWarningScreen):
-    """Subclass to avoid conflicting with humidity warnings on the screen stack."""
 
 logger = logging.getLogger(__name__)
 config = load_config()
@@ -115,7 +110,6 @@ class WeatherNext(Static):
 class Weather(Static):
     _weather_next = None
     _last_error = False
-    _prob_warned = False
 
     @work(
         thread=True,
@@ -145,30 +139,19 @@ class Weather(Static):
 
     def _check_probability_warning(self, data):
         prob_keys = [
-            ("precip_probability", "\u2614\ufe0f Precip"),
-            ("frozen_probability", "\u2744\ufe0f Frozen"),
-            ("thunderstorm_probability", "\u26a1\ufe0f Thunder"),
+            ("precip_probability", "\u2614\ufe0f"),
+            ("frozen_probability", "\u2744\ufe0f"),
+            ("thunderstorm_probability", "\u26a1\ufe0f"),
         ]
         current = data["currentConditions"]
         today = data["days"][0] if data["days"] else {}
-        warnings = []
-        for key, label in prob_keys:
+        messages = []
+        for key, icon in prob_keys:
             if current.get(key, 0) > PROB_THRESHOLD:
-                warnings.append(f"{label} now: {current[key]:.0f}%")
+                messages.append(f"{icon} {current[key]:.0f}% now")
             elif today.get(key, 0) > PROB_THRESHOLD:
-                warnings.append(f"{label} today: {today[key]:.0f}%")
-
-        if warnings:
-            if not self._prob_warned:
-                self.app.push_screen(
-                    WeatherWarningScreen(
-                        title="WEATHER WARNING",
-                        messages=warnings,
-                    )
-                )
-                self._prob_warned = True
-        else:
-            self._prob_warned = False
+                messages.append(f"{icon} {today[key]:.0f}% today")
+        self.app.warning_manager.update("weather", messages)
 
     def on_mount(self):
         self.set_loading(True)

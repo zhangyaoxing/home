@@ -111,7 +111,8 @@ Screen {
     color: red;
 }
 
-HumidityWarningScreen {
+HumidityWarningScreen,
+WarningScreen {
     layout: vertical;
     align: center middle;
     background: #000000 70%;
@@ -143,7 +144,7 @@ HumidityWarningScreen {
     background: #300000;
     hatch: cross #7a1818 35%;
     content-align: center middle;
-    color: red;
+    color: yellow;
     text-style: bold;
 }
 

@@ -11,6 +11,7 @@ from textual.binding import Binding
 from home_control_panel.libs.utils import config
 from home_control_panel.sensors import Sensors
 from home_control_panel.train import Train, TrainSchedule, TrainStationMessage
+from home_control_panel.warning import WarningManager
 from home_control_panel.weather import Weather
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,9 @@ class HomeApp(App):
 
     def on_mount(self):
         self.title = config["title"]
+        self.warning_manager = WarningManager(
+            self, config["humidityWarningInterval"]
+        )
 
     def compose(self):
         # yield Header(show_clock=True)
