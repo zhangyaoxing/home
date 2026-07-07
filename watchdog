@@ -33,49 +33,51 @@ def _remote_has_incoming():
 
 
 def start_app():
-    proc = subprocess.Popen(
-        [sys.executable, "-m", "home_control_panel.app"],
-        env={**os.environ, "PYTHONPATH": "src"},
-    )
-    try:
-        os.tcsetpgrp(sys.stdin.fileno(), proc.pid)
-    except OSError:
-        pass
-    return proc
+    """Fork and exec the app. Child inherits terminal control from parent."""
+    pid = os.fork()
+    if pid == 0:
+        os.execvpe(
+            sys.executable,
+            [sys.executable, "-m", "home_control_panel.app"],
+            {**os.environ, "PYTHONPATH": "src"},
+        )
+    return pid
 
 
-def reclaim_terminal():
+def app_exited(pid):
+    """Check whether the given child has exited. Returns exit_code or None."""
     try:
-        os.tcsetpgrp(sys.stdin.fileno(), os.getpid())
-    except OSError:
-        pass
+        wpid, status = os.waitpid(pid, os.WNOHANG)
+    except ChildProcessError:
+        return -1
+    if wpid == 0:
+        return None
+    return os.waitstatus_to_exitcode(status)
+
+
+def kill_app(pid):
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(50):  # 5 seconds
+        if app_exited(pid) is not None:
+            return
+        time.sleep(0.1)
+    os.kill(pid, signal.SIGKILL)
+    os.waitpid(pid, 0)
 
 
 def timestamp():
     return time.strftime("%H:%M:%S")
 
 
-def kill_app(proc):
-    proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait()
-
-
 def run_loop():
-    signal.signal(signal.SIGTTOU, signal.SIG_IGN)
-
-    proc = start_app()
-    print(f"{timestamp()} App started (PID: {proc.pid}).")
+    pid = start_app()
+    print(f"{timestamp()} App started (PID: {pid}).")
 
     while True:
         time.sleep(CHECK_INTERVAL)
 
-        exit_code = proc.poll()
+        exit_code = app_exited(pid)
         if exit_code is not None:
-            reclaim_terminal()
             if exit_code == 0:
                 print(f"{timestamp()} App exited normally. Stopping.")
                 return
@@ -86,25 +88,23 @@ def run_loop():
                 while not has_changes():
                     time.sleep(CHECK_INTERVAL)
 
-            proc = _restart()
+            pid = _restart()
             continue
 
         if has_changes():
             print(f"{timestamp()} Changes detected, restarting...")
-            kill_app(proc)
-            reclaim_terminal()
-            proc = _restart()
+            kill_app(pid)
+            pid = _restart()
 
 
 def _restart():
     print(f"{timestamp()} Restarting...")
     while True:
-        proc = start_app()
+        pid = start_app()
         time.sleep(2)
-        if proc.poll() is None:
-            print(f"{timestamp()} App started (PID: {proc.pid}).")
-            return proc
-        reclaim_terminal()
+        if app_exited(pid) is None:
+            print(f"{timestamp()} App started (PID: {pid}).")
+            return pid
         print(f"{timestamp()} Start failed, retrying in {RETRY_DELAY}s...")
         time.sleep(RETRY_DELAY)
 
