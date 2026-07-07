@@ -94,7 +94,7 @@ Screen {
 
 .sensor-name {
     width: 1fr;
-    color: gray;
+    color: white;
     overflow: hidden;
 }
 
