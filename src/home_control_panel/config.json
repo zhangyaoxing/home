@@ -43,6 +43,7 @@
   "sensorRefreshInterval": 30,
   "humidityWarningThreshold": 30,
   "humidityWarningInterval": 5,
+  "probabilityWarningThreshold": 50,
   "sensors": {
     "temp": [
       "sensor.wen_shi_du_chuan_gan_qi_temperature",

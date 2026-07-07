@@ -1,5 +1,6 @@
 import logging
 
+from rich.text import Text
 from textual import work
 from textual.widgets import DataTable, Static
 
@@ -9,10 +10,16 @@ from home_control_panel.libs.utils import load_config
 logger = logging.getLogger(__name__)
 config = load_config()
 WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
+PROB_THRESHOLD = config["probabilityWarningThreshold"]
 
 
 def winddir(angle):
     return WIND_DIRECTIONS[int((angle + 22.5) // 45) % len(WIND_DIRECTIONS)]
+
+
+def _fmt_prob(value):
+    s = "{p}%".format(p=value)
+    return Text(s, style="red" if value > PROB_THRESHOLD else "")
 
 
 class WeatherNext(Static):
@@ -23,9 +30,9 @@ class WeatherNext(Static):
         self._table = DataTable(classes="forecast")
         self._table.cursor_type = "none"
         self._table.add_columns(
-            *("\U0001F4C5", "\u26c5\ufe0f", "\U0001F321", "\U0001F4A7",
-              "\U0001F4A8", "\u2601\ufe0f", "\U0001F441",
-              "\u2614\ufe0f", "\u2744\ufe0f", "\u26a1\ufe0f")
+            *("\U0001F4C5", "\u26c5", "\u00b0C", "\U0001F4A7",
+              "\U0001F4A8", "\u2601", "Vis",
+              "\u2614", "\u2744", "\u26a1")
         )
         self.mount(self._table)
 
@@ -44,9 +51,9 @@ class WeatherNext(Static):
             ),
             "{cloud}%".format(cloud=current["cloudcover"]),
             "{vis} km".format(vis=current["visibility"]),
-            "{p}%".format(p=current["precip_probability"]),
-            "{p}%".format(p=current["frozen_probability"]),
-            "{p}%".format(p=current["thunderstorm_probability"]),
+            _fmt_prob(current["precip_probability"]),
+            _fmt_prob(current["frozen_probability"]),
+            _fmt_prob(current["thunderstorm_probability"]),
         )
         for i, day in enumerate(data["days"]):
             self._table.add_row(
@@ -63,9 +70,9 @@ class WeatherNext(Static):
                 ),
                 "{cloud}%".format(cloud=day["cloudcover"]),
                 "{vis} km".format(vis=day["visibility"]),
-                "{p}%".format(p=day["precip_probability"]),
-                "{p}%".format(p=day["frozen_probability"]),
-                "{p}%".format(p=day["thunderstorm_probability"]),
+                _fmt_prob(day["precip_probability"]),
+                _fmt_prob(day["frozen_probability"]),
+                _fmt_prob(day["thunderstorm_probability"]),
             )
 
     def show_error(self):
