@@ -3,8 +3,8 @@ import logging
 from textual import work
 from textual.widgets import Label, DataTable, Static
 
-from libs.weather_api import api_weather
-from libs.utils import load_config
+from home_control_panel.libs.weather_api import api_weather
+from home_control_panel.libs.utils import load_config
 
 logger = logging.getLogger(__name__)
 config = load_config()

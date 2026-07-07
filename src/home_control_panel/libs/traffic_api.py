@@ -1,6 +1,6 @@
 import requests
 import logging
-from libs.utils import load_config
+from home_control_panel.libs.utils import load_config
 from datetime import datetime
 
 logger = logging.getLogger(__name__)

@@ -8,8 +8,8 @@ from textual.containers import Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
-from libs.ha_api import api_ha
-from libs.utils import config
+from home_control_panel.libs.ha_api import api_ha
+from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
 HUMIDITY_WARNING_THRESHOLD = 35

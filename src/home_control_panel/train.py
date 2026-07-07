@@ -8,14 +8,14 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Rule, Static
 
-from common_widgets import ScrollingLabel
-from libs.traffic_api import (
+from home_control_panel.common_widgets import ScrollingLabel
+from home_control_panel.libs.traffic_api import (
     api_train_announcement,
     api_train_message,
     api_train_stations,
     is_freq_throttled,
 )
-from libs.utils import config
+from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
 

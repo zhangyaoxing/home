@@ -8,10 +8,10 @@ load_dotenv()
 from textual.app import App
 from textual.binding import Binding
 
-from libs.utils import config
-from sensors import Sensors
-from train import Train, TrainSchedule, TrainStationMessage
-from weather import Weather
+from home_control_panel.libs.utils import config
+from home_control_panel.sensors import Sensors
+from home_control_panel.train import Train, TrainSchedule, TrainStationMessage
+from home_control_panel.weather import Weather
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class HomeApp(App):
         Binding("q", "quit", "Quit", priority=True),
         ("r", "refresh", "Refresh")
     ]
-    CSS_PATH = "style.css"
+    CSS_PATH = "assets/style.css"
 
     def on_mount(self):
         self.title = config["title"]
@@ -45,6 +45,9 @@ class HomeApp(App):
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
 
-if __name__ == "__main__":
+def main():
     logger.info("Starting HomeApp...")
     HomeApp().run()
+
+if __name__ == "__main__":
+    main()

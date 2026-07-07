@@ -20,9 +20,8 @@ dev = [
     "textual-dev==1.8.0",
 ]
 
-[tool.setuptools]
-py-modules = ["common_widgets", "home", "sensors", "train", "weather"]
+[project.scripts]
+home-panel = "home_control_panel.app:main"
 
 [tool.setuptools.packages.find]
-include = ["libs*"]
-namespaces = true
+where = ["src"]
