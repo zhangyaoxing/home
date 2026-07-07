@@ -309,17 +309,17 @@ class WeatherChart(Static):
         self._metrics = [
             WeatherMetricChart(
                 [
-                    {"label": "Temp", "key": "temp", "color": (255, 100, 100)},
-                    {"label": "Humidity", "key": "humidity", "color": (100, 100, 255), "axis": "right"},
+                    {"label": "Temp °C", "key": "temp", "color": (255, 100, 100)},
+                    {"label": "Humidity %", "key": "humidity", "color": (100, 100, 255), "axis": "right"},
                 ],
-                (0, 35),
+                (0, 45),
                 right_ylim=(0, 100),
             ),
             WeatherMetricChart(
                 [
-                    {"label": "Rain", "key": "precip_probability", "color": (100, 200, 255)},
-                    {"label": "Snow", "key": "frozen_probability", "color": (200, 200, 255)},
-                    {"label": "Thunder", "key": "thunderstorm_probability", "color": (255, 255, 100)},
+                    {"label": "Rain %", "key": "precip_probability", "color": (100, 200, 255)},
+                    {"label": "Snow %", "key": "frozen_probability", "color": (200, 200, 255)},
+                    {"label": "Thunder %", "key": "thunderstorm_probability", "color": (255, 255, 100)},
                 ],
                 (0, 100),
             ),
