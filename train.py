@@ -131,7 +131,6 @@ class ScheduleLine(Horizontal):
 
     def on_mount(self):
         self.refresh_data()
-        self.set_interval(config["apiFreqCheck"], self.refresh_data)
 
 
 class ScheduleEntry(Static):

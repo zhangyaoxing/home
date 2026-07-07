@@ -34,6 +34,7 @@ class HumidityWarningPanel(Static):
     def __init__(self, sensors):
         super().__init__(id="humidity-warning")
         self.sensors = sensors
+        self._blink_timer = None
 
     def compose(self) -> ComposeResult:
         yield Static("LOW HUMIDITY", classes="humidity-warning-title")
@@ -59,7 +60,12 @@ class HumidityWarningPanel(Static):
 
     def on_mount(self):
         self.update_sensors(self.sensors)
-        self.set_interval(0.5, self.toggle_warning_icon)
+        self._blink_timer = self.set_interval(0.5, self.toggle_warning_icon)
+
+    def on_unmount(self):
+        if self._blink_timer is not None:
+            self._blink_timer.stop()
+            self._blink_timer = None
 
 
 class HumidityWarningScreen(ModalScreen):
