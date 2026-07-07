@@ -12,7 +12,6 @@ from home_control_panel.libs.ha_api import api_ha
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
-HUMIDITY_WARNING_THRESHOLD = 35
 HUMIDITY_ENTITY_IDS = set(config["sensors"]["hum"])
 
 
@@ -25,7 +24,7 @@ def low_humidity_sensors(data):
             humidity = float(sensor["state"])
         except (TypeError, ValueError):
             continue
-        if humidity <= HUMIDITY_WARNING_THRESHOLD:
+        if humidity <= config["humidityWarningThreshold"]:
             low_sensors.append(sensor)
     return low_sensors
 

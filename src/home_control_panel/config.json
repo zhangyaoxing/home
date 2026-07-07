@@ -1,61 +1,68 @@
 {
-    "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
-    "weatherLat": 59.346616,
-    "weatherLon": 18.034304,
-    "haApiUrl": "http://homeassistant.local:8123",
-    "myStationCode": "Sod",
-    "logLevel": "INFO",
-    "message": {
-        "updateIntervalMin": 5,
-        "scrollSpeed": 0.1,
-        "margin": 50
+  "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
+  "weatherLat": 59.346616,
+  "weatherLon": 18.034304,
+  "haApiUrl": "http://homeassistant.local:8123",
+  "myStationCode": "Sod",
+  "logLevel": "INFO",
+  "message": {
+    "updateIntervalMin": 5,
+    "scrollSpeed": 0.1,
+    "margin": 50
+  },
+  "apiFreqCheck": 60,
+  "apiFreqControl": [
+    {
+      "from": 0,
+      "to": 7,
+      "intervalMin": 30
     },
-    "apiFreqCheck": 60,
-    "apiFreqControl": [{
-        "from": 0,
-        "to": 7,
-        "intervalMin": 30
-    }, {
-        "from": 7,
-        "to": 9,
-        "intervalMin": 2
-    }, {
-        "from": 9,
-        "to": 17,
-        "intervalMin": 10
-    }, {
-        "from": 17,
-        "to": 19,
-        "intervalMin": 2
-    }, {
-        "from": 19,
-        "to": 24,
-        "intervalMin": 10
-    }],
-    "stationUpdateInterval": 86400,
-    "weatherRefreshInterval": 300,
-    "sensorRefreshInterval": 30,
-    "humidityWarningInterval": 5,
-    "sensors": {
-        "temp": [
-            "sensor.wen_shi_du_chuan_gan_qi_temperature",
-            "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
-            "sensor.temp_hum_temperature",
-            "sensor.plant_hum_1_temperature",
-            "sensor.plant_hum_temperature",
-            "sensor.hobeian_zg_303z_temperature"
-        ],
-        "hum": [
-            "sensor.wen_shi_du_chuan_gan_qi_humidity",
-            "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
-            "sensor.temp_hum_humidity",
-            "sensor.plant_hum_1_humidity",
-            "sensor.plant_hum_humidity",
-            "sensor.hobeian_zg_303z_humidity"
-        ],
-        "illu": [
-            "sensor.tz3000_9kbbfeho_ts0222_illuminance"
-        ]
+    {
+      "from": 7,
+      "to": 9,
+      "intervalMin": 2
     },
-    "title": "Yaoxing's Sweet Home"
+    {
+      "from": 9,
+      "to": 17,
+      "intervalMin": 10
+    },
+    {
+      "from": 17,
+      "to": 19,
+      "intervalMin": 2
+    },
+    {
+      "from": 19,
+      "to": 24,
+      "intervalMin": 10
+    }
+  ],
+  "stationUpdateInterval": 86400,
+  "weatherRefreshInterval": 300,
+  "sensorRefreshInterval": 30,
+  "humidityWarningThreshold": 30,
+  "humidityWarningInterval": 5,
+  "sensors": {
+    "temp": [
+      "sensor.wen_shi_du_chuan_gan_qi_temperature",
+      "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
+      "sensor.temp_hum_temperature",
+      "sensor.plant_hum_1_temperature",
+      "sensor.plant_hum_temperature",
+      "sensor.hobeian_zg_303z_temperature"
+    ],
+    "hum": [
+      "sensor.wen_shi_du_chuan_gan_qi_humidity",
+      "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
+      "sensor.temp_hum_humidity",
+      "sensor.plant_hum_1_humidity",
+      "sensor.plant_hum_humidity",
+      "sensor.hobeian_zg_303z_humidity"
+    ],
+    "illu": [
+      "sensor.tz3000_9kbbfeho_ts0222_illuminance"
+    ]
+  },
+  "title": "Yaoxing's Sweet Home"
 }
