@@ -29,7 +29,7 @@ def _as_list(value):
 
 
 def _normalize_message(message):
-    return " ".join(str(message).splitlines())
+    return " ".join(str(message).split())
 
 
 class TrainStationMessage(Static):
@@ -82,7 +82,7 @@ class TrainStationMessage(Static):
         self.border_title = "Station Notices"
         self.set_loading(True)
         self.set_timer(1, self.load_message)
-        self.set_interval(config["apiFreqCheck"], self.load_message)
+        self.set_interval(config["message"]["updateIntervalMin"] * 60, self.load_message)
 
     def refresh_message(self):
         self.load_message(True)
