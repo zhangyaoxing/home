@@ -1,7 +1,7 @@
 {
     "trainApiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
-    "weatherLat": 59.3293,
-    "weatherLon": 18.0686,
+    "weatherLat": 59.346616,
+    "weatherLon": 18.034304,
     "haApiUrl": "http://homeassistant.local:8123",
     "myStationCode": "Sod",
     "logLevel": "INFO",

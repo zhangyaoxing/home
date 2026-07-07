@@ -11,7 +11,7 @@ config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
 
 SMHI_URL = (
-    "https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2"
+    "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1"
     "/geotype/point/lon/{lon}/lat/{lat}/data.json"
 )
 
@@ -46,17 +46,10 @@ WSYMB2_MAP = {
 }
 
 
-def _pluck(params, name):
-    for p in params:
-        if p["name"] == name:
-            return p["values"][0]
-    return None
-
-
 def _group_by_day(time_series):
     days = defaultdict(list)
     for entry in time_series:
-        dt = datetime.fromisoformat(entry["validTime"])
+        dt = datetime.fromisoformat(entry["time"])
         day_key = dt.strftime("%Y-%m-%d")
         days[day_key].append(entry)
     return days
@@ -73,15 +66,16 @@ def _aggregate_day(entries):
     snow = 0.0
 
     for entry in entries:
-        t = _pluck(entry["parameters"], "t")
-        ws = _pluck(entry["parameters"], "ws")
-        wd = _pluck(entry["parameters"], "wd")
-        gust = _pluck(entry["parameters"], "gust")
-        r = _pluck(entry["parameters"], "r")
-        tcc = _pluck(entry["parameters"], "tcc_mean")
-        wsymb = _pluck(entry["parameters"], "Wsymb2")
-        pmean = _pluck(entry["parameters"], "pmean")
-        spp = _pluck(entry["parameters"], "spp")
+        d = entry["data"]
+        t = d.get("air_temperature")
+        ws = d.get("wind_speed")
+        wd = d.get("wind_from_direction")
+        gust = d.get("wind_speed_of_gust")
+        r = d.get("relative_humidity")
+        tcc = d.get("cloud_area_fraction")
+        wsymb = d.get("symbol_code")
+        pmean = d.get("precipitation_amount_mean")
+        pfrozen = d.get("precipitation_frozen_part", 0)
 
         if t is not None:
             temps.append(t)
@@ -98,7 +92,7 @@ def _aggregate_day(entries):
         if wsymb is not None:
             symbols.append(int(wsymb))
 
-        if pmean is not None and pmean > 0 and spp is not None and spp > 50:
+        if pmean is not None and pmean > 0 and pfrozen is not None and pfrozen > 0:
             snow += pmean
 
     if not temps:
@@ -139,18 +133,18 @@ def _dominant_symbol(symbols):
 
 
 def _build_current(entry):
-    params = entry["parameters"]
-    t = _pluck(params, "t") or 0
-    ws = _pluck(params, "ws") or 0
-    gust = _pluck(params, "gust") or 0
-    wd = _pluck(params, "wd") or 0
-    r = _pluck(params, "r") or 0
-    tcc = _pluck(params, "tcc_mean") or 0
-    wsymb = _pluck(params, "Wsymb2")
+    d = entry["data"]
+    t = d.get("air_temperature") or 0
+    ws = d.get("wind_speed") or 0
+    gust = d.get("wind_speed_of_gust") or 0
+    wd = d.get("wind_from_direction") or 0
+    r = d.get("relative_humidity") or 0
+    tcc = d.get("cloud_area_fraction") or 0
+    wsymb = d.get("symbol_code")
 
     mps_to_kmh = 3.6
     return {
-        "datetime": entry["validTime"],
+        "datetime": entry["time"],
         "conditions": WSYMB2_MAP.get(int(wsymb), "—") if wsymb else "—",
         "temp": t,
         "feelslike": 0,
