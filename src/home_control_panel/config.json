@@ -49,10 +49,7 @@
     "temp": [
       "sensor.wen_shi_du_chuan_gan_qi_temperature",
       "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
-      "sensor.temp_hum_temperature",
-      "sensor.plant_hum_1_temperature",
-      "sensor.plant_hum_temperature",
-      "sensor.hobeian_zg_303z_temperature"
+      "sensor.temp_hum_temperature"
     ],
     "hum": [
       "sensor.wen_shi_du_chuan_gan_qi_humidity",
