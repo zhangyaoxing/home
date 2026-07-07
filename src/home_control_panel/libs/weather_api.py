@@ -69,7 +69,7 @@ def _group_by_day(time_series):
     return days
 
 
-def _aggregate_day(entries):
+def _aggregate_day(date, entries):
     temps = []
     humidities = []
     windspeeds = []
@@ -135,6 +135,7 @@ def _aggregate_day(entries):
     mps_to_kmh = 3.6
 
     return {
+        "date": date,
         "temp": round(sum(temps) / len(temps), 1),
         "tempmin": round(min(temps), 1),
         "tempmax": round(max(temps), 1),
@@ -223,7 +224,7 @@ def api_weather():
     days_by_key = _group_by_day(time_series)
     days = []
     for day_key in sorted(days_by_key.keys()):
-        day_data = _aggregate_day(days_by_key[day_key])
+        day_data = _aggregate_day(day_key, days_by_key[day_key])
         if day_data:
             days.append(day_data)
 

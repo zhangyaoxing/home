@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime as dt
 
 from rich.text import Text
 from textual import work
@@ -6,6 +7,11 @@ from textual.widgets import DataTable, Static
 
 from home_control_panel.libs.weather_api import api_weather
 from home_control_panel.libs.utils import load_config
+from home_control_panel.sensors import HumidityWarningScreen
+
+
+class WeatherWarningScreen(HumidityWarningScreen):
+    """Subclass to avoid conflicting with humidity warnings on the screen stack."""
 
 logger = logging.getLogger(__name__)
 config = load_config()
@@ -18,8 +24,9 @@ def winddir(angle):
 
 
 def _fmt_prob(value):
-    return Text("{p:.0f}%".format(p=value),
-               style="red" if value > PROB_THRESHOLD else "")
+    return Text(
+        "{p:.0f}%".format(p=value), style="red" if value > PROB_THRESHOLD else ""
+    )
 
 
 def _fmt_temp(t):
@@ -32,7 +39,8 @@ def _fmt_hum(h):
 
 def _fmt_wind(speed, gust, wdir):
     return "{dir} {speed:04.1f} / {gust:04.1f} km/h".format(
-        dir=winddir(wdir), speed=speed, gust=gust)
+        dir=winddir(wdir), speed=speed, gust=gust
+    )
 
 
 def _fmt_cloud(c):
@@ -51,9 +59,18 @@ class WeatherNext(Static):
         self._table = DataTable(classes="forecast")
         self._table.cursor_type = "none"
         self._table.add_columns(
-            *("\U0001F4C5", "\u26c5\ufe0f", "\U0001F321", "\U0001F4A7",
-              "\U0001F4A8", "\u2601\ufe0f", "\U0001F441",
-              "\u2614\ufe0f", "\u2744\ufe0f", "\u26a1\ufe0f")
+            *(
+                "\U0001f4c5",
+                "\u26c5\ufe0f",
+                "\U0001f321",
+                "\U0001f4a7",
+                "\U0001f4a8",
+                "\u2601\ufe0f",
+                "\U0001f441",
+                "\u2614\ufe0f",
+                "\u2744\ufe0f",
+                "\u26a1\ufe0f",
+            )
         )
         self.mount(self._table)
 
@@ -74,7 +91,7 @@ class WeatherNext(Static):
         )
         for i, day in enumerate(data["days"]):
             self._table.add_row(
-                "today" if i == 0 else "+{i}".format(i=i),
+                "Today" if i == 0 else dt.strptime(day["date"], "%Y-%m-%d").strftime("%a"),
                 day["conditions"],
                 "{t} ({tmin} ~ {tmax})".format(
                     t=_fmt_temp(day["temp"]),
@@ -98,6 +115,7 @@ class WeatherNext(Static):
 class Weather(Static):
     _weather_next = None
     _last_error = False
+    _prob_warned = False
 
     @work(
         thread=True,
@@ -122,7 +140,35 @@ class Weather(Static):
         else:
             self._last_error = False
             self._weather_next.refresh_data(data)
+            self._check_probability_warning(data)
             self.set_loading(False)
+
+    def _check_probability_warning(self, data):
+        prob_keys = [
+            ("precip_probability", "\u2614\ufe0f Precip"),
+            ("frozen_probability", "\u2744\ufe0f Frozen"),
+            ("thunderstorm_probability", "\u26a1\ufe0f Thunder"),
+        ]
+        current = data["currentConditions"]
+        today = data["days"][0] if data["days"] else {}
+        warnings = []
+        for key, label in prob_keys:
+            if current.get(key, 0) > PROB_THRESHOLD:
+                warnings.append(f"{label} now: {current[key]:.0f}%")
+            elif today.get(key, 0) > PROB_THRESHOLD:
+                warnings.append(f"{label} today: {today[key]:.0f}%")
+
+        if warnings:
+            if not self._prob_warned:
+                self.app.push_screen(
+                    WeatherWarningScreen(
+                        title="WEATHER WARNING",
+                        messages=warnings,
+                    )
+                )
+                self._prob_warned = True
+        else:
+            self._prob_warned = False
 
     def on_mount(self):
         self.set_loading(True)
