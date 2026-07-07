@@ -41,6 +41,7 @@
   "stationUpdateInterval": 86400,
   "weatherRefreshInterval": 300,
   "weatherDetailsInterval": 10,
+  "timezone": "Europe/Stockholm",
   "sensorRefreshInterval": 30,
   "humidityWarningThreshold": 35,
   "humidityWarningInterval": 5,

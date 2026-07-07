@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -62,8 +63,9 @@ WSYMB2_ICON = {
 
 def _group_by_day(time_series):
     days = defaultdict(list)
+    tz = ZoneInfo(config["timezone"])
     for entry in time_series:
-        dt = datetime.fromisoformat(entry["time"])
+        dt = datetime.fromisoformat(entry["time"]).astimezone(tz)
         day_key = dt.strftime("%Y-%m-%d")
         days[day_key].append(entry)
     return days
@@ -168,7 +170,7 @@ def _build_hourly(entries):
     hums = []
     for entry in entries:
         d = entry["data"]
-        dt = datetime.fromisoformat(entry["time"])
+        dt = datetime.fromisoformat(entry["time"]).astimezone(ZoneInfo(config["timezone"]))
         hours.append(dt.strftime("%H:%M"))
         datetimes.append(entry["time"])
         t = d.get("air_temperature")

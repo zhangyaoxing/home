@@ -48,10 +48,6 @@ def _fmt_vis(v):
     return "{v:04.1f} km".format(v=v)
 
 
-def _format_day_label(date, index):
-    return _format_day_label_with_weekday(date, index, "%A")
-
-
 def _format_forecast_day_label(date, index):
     return _format_day_label_with_weekday(date, index, "%a")
 
@@ -287,16 +283,14 @@ class WeatherMetricChart(Canvas):
     def _draw_x_ticks(self, hours, plot_left, plot_right, plot_bottom):
         if not hours:
             return
-        for index in self._tick_indexes(len(hours), 4):
+        non_empty = [(i, h) for i, h in enumerate(hours) if h]
+        if not non_empty:
+            return
+        for index, label in non_empty:
             normalized = index / max(len(hours) - 1, 1)
             x = round(plot_left + normalized * (plot_right - plot_left))
             self.set_pixel(x, plot_bottom, char="┬", style=CHART_AXIS_STYLE)
-            align = TextAlign.CENTER
-            if index == 0:
-                align = TextAlign.LEFT
-            elif index == len(hours) - 1:
-                align = TextAlign.RIGHT
-            self.write_text(x, self.size.height - 1, f"[dim]{hours[index]}[/]", align=align)
+            self.write_text(x, self.size.height - 1, f"[dim]{label}[/]", align=TextAlign.CENTER)
 
     @staticmethod
     def _tick_values(start, end, count):
@@ -305,18 +299,10 @@ class WeatherMetricChart(Canvas):
         step = (end - start) / (count - 1)
         return [start + step * i for i in range(count)]
 
-    @staticmethod
-    def _tick_indexes(length, count):
-        if length <= 1:
-            return [0]
-        count = min(count, length)
-        return sorted({round(i * (length - 1) / (count - 1)) for i in range(count)})
-
 
 class WeatherChart(Static):
     _metrics = None
     _hourly_days = None
-    _day_index = 0
 
     def on_mount(self):
         self.border_title = "Weather Details"
@@ -340,38 +326,61 @@ class WeatherChart(Static):
         ]
         for metric in self._metrics:
             self.mount(metric)
-        self.set_interval(config["weatherDetailsInterval"], self.show_next_day)
         if self._hourly_days is not None:
             self.refresh_data(self._hourly_days)
 
     def refresh_data(self, hourly_days):
         self._hourly_days = hourly_days or []
-        self._day_index = 0
-        self._show_current_day()
+        self._show_all_days()
 
-    def show_next_day(self):
-        if not self._hourly_days:
-            return
-        self._day_index = (self._day_index + 1) % len(self._hourly_days)
-        self._show_current_day()
-
-    def _show_current_day(self):
+    def _show_all_days(self):
         if self._metrics is None:
             return
         if not self._hourly_days:
             for metric in self._metrics:
                 metric.refresh_data(None)
             return
-        hourly = self._hourly_days[self._day_index]
-        day_label = self._format_day_label(hourly.get("date"), self._day_index)
-        self.border_title = f"Weather Details {day_label}"
+        combined = self._merge_days(self._hourly_days)
+        first_date = self._hourly_days[0].get("date", "")
+        last_date = self._hourly_days[-1].get("date", "")
+        self.border_title = f"Weather Details {first_date} – {last_date}"
         self.border_subtitle = ""
         for metric in self._metrics:
-            metric.refresh_data(hourly)
+            metric.refresh_data(combined)
 
     @staticmethod
-    def _format_day_label(date, index):
-        return _format_forecast_day_label(date, index)
+    def _merge_days(hourly_days):
+        keys = ["temp", "precip_probability", "frozen_probability", "thunderstorm_probability", "humidity"]
+        merged = {"hours": [], "datetimes": []}
+        for k in keys:
+            merged[k] = []
+        for day_index, day in enumerate(hourly_days):
+            date = day.get("date", "")
+            if day_index == 0:
+                day_name = "Today"
+            elif date:
+                day_name = dt.strptime(date, "%Y-%m-%d").strftime("%a")
+            else:
+                day_name = ""
+            hours = day.get("hours", [])
+            for i, h in enumerate(hours):
+                label = WeatherChart._hour_label(day_index, day_name, h, i == 0)
+                merged["hours"].append(label)
+            merged["datetimes"].extend(day.get("datetimes", []))
+            for k in keys:
+                merged[k].extend(day.get(k, []))
+        return merged
+
+    @staticmethod
+    def _hour_label(day_index, day_name, hour_str, is_first):
+        if day_index >= 3:
+            return day_name if is_first else ""
+        hour = int(hour_str.split(":")[0])
+        if hour == 0:
+            return day_name if is_first or hour_str == "00:00" else ""
+        if is_first or hour % 6 == 0:
+            return hour_str
+        return ""
 
 
 class Weather(Static):
