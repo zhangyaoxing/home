@@ -12,11 +12,6 @@ RETRY_DELAY = 30
 
 
 def has_changes():
-    if (
-        subprocess.run(["git", "diff", "--quiet"]).returncode != 0
-        or subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0
-    ):
-        return True
     return _remote_has_incoming()
 
 
