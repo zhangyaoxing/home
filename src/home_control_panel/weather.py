@@ -30,9 +30,9 @@ class WeatherNext(Static):
         self._table = DataTable(classes="forecast")
         self._table.cursor_type = "none"
         self._table.add_columns(
-            *("\U0001F4C5", "\u26c5", "\u00b0C", "\U0001F4A7",
-              "\U0001F4A8", "\u2601", "Vis",
-              "\u2614", "\u2744", "\u26a1")
+            *("\U0001F4C5", "\u26c5\ufe0f", "\U0001F321", "\U0001F4A7",
+              "\U0001F4A8", "\u2601\ufe0f", "\U0001F441",
+              "\u2614\ufe0f", "\u2744\ufe0f", "\u26a1\ufe0f")
         )
         self.mount(self._table)
 
