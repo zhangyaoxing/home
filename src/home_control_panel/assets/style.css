@@ -29,6 +29,7 @@ Screen {
     layout: horizontal;
     height: 2;
     text-style: bold;
+    color: cyan;
     border-bottom: solid gray;
 }
 
