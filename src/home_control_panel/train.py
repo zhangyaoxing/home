@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 import logging
 
 import pytz
@@ -61,8 +62,11 @@ class TrainStationMessage(Static):
         summaries = {}
         for message in messages:
             text = _normalize_message(message.get("FreeText", ""))
-            if text and text not in self._seen_messages:
-                summaries[text] = summarize_notice(text)
+            if not text:
+                continue
+            digest = hashlib.md5(text.encode()).hexdigest()
+            if digest not in self._seen_messages:
+                summaries[digest] = summarize_notice(text)
 
         self.app.call_from_thread(self._apply_messages, messages_json, summaries)
 
@@ -78,8 +82,11 @@ class TrainStationMessage(Static):
         for message in messages:
             text = _normalize_message(message.get("FreeText", ""))
             if text:
-                self._seen_messages.add(text)
-            display_text = summaries.get(text, text)
+                digest = hashlib.md5(text.encode()).hexdigest()
+                self._seen_messages.add(digest)
+                display_text = summaries.get(digest, text)
+            else:
+                display_text = text
             status_class = "lag" if message.get("Status") == "Lag" else "normal"
             self.mount(
                 ScrollingLabel(
