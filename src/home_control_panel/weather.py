@@ -180,7 +180,7 @@ class WeatherChart(Static):
         ]
         for metric in self._metrics:
             self.mount(metric)
-        self.set_interval(30, self.show_next_day)
+        self.set_interval(config["weatherDetailsInterval"], self.show_next_day)
         if self._hourly_days is not None:
             self.refresh_data(self._hourly_days)
 

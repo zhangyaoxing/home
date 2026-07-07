@@ -32,6 +32,7 @@ Config settings can be found in `/config.json`.
     |Total: 212/day|||
 - `stationUpdateInterval`: Because the stations doesn't change easily. We only update the station list once a day.
 - `weatherRefreshInterval`: How often weather data are refreshed, in seconds.
+- `weatherDetailsInterval`: How long each day is shown in the weather details charts, in seconds.
 - `sensorRefreshInterval`: How often sensor data are refreshed, in seconds.
 - `humidityWarningInterval`: How many seconds the low-humidity warning remains
   visible or hidden before alternating.
