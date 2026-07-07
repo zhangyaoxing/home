@@ -53,6 +53,20 @@ def pull_changes():
     return True
 
 
+def install_dependencies():
+    """Install dependencies from pyproject.toml. Returns True on success."""
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-e", "."],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        print(f"{timestamp()} Dependency install failed: {stderr}")
+        return False
+    return True
+
+
 def app_exited(pid):
     """Check whether the given child has exited. Returns exit_code or None."""
     try:
@@ -79,6 +93,10 @@ def timestamp():
 
 
 def run_loop():
+    if not install_dependencies():
+        print(f"{timestamp()} Initial dependency install failed. Stopping.")
+        return
+
     pid = start_app()
     print(f"{timestamp()} App started (PID: {pid}).")
 
@@ -99,7 +117,10 @@ def run_loop():
 
             print(f"{timestamp()} Changes detected, pulling...")
             if pull_changes():
-                pid = _restart()
+                if install_dependencies():
+                    pid = _restart()
+                else:
+                    print(f"{timestamp()} Skipping restart due to install failure.")
             else:
                 print(f"{timestamp()} Skipping restart due to pull failure.")
             continue
@@ -107,8 +128,11 @@ def run_loop():
         if has_changes():
             print(f"{timestamp()} Changes detected, pulling...")
             if pull_changes():
-                kill_app(pid)
-                pid = _restart()
+                if install_dependencies():
+                    kill_app(pid)
+                    pid = _restart()
+                else:
+                    print(f"{timestamp()} Skipping restart due to install failure.")
 
 
 def _restart():

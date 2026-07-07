@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime as dt
 
-import plotext as plt
 from rich.text import Text
 from textual import work
 from textual.widgets import DataTable, Static
+from textual_plotext import PlotextPlot
 
 from home_control_panel.libs.weather_api import api_weather
 from home_control_panel.libs.utils import load_config
@@ -124,7 +124,7 @@ class WeatherNext(Static):
         self._table.add_row("Unavailable", "Weather service unavailable")
 
 
-class WeatherMetricChart(Static):
+class WeatherMetricChart(PlotextPlot):
     def __init__(self, label, key, color, ylim):
         super().__init__(classes="weather_metric_chart")
         self._label = label
@@ -143,25 +143,24 @@ class WeatherMetricChart(Static):
     def _render_chart(self):
         hourly = self._hourly
         if not hourly or not hourly.get("hours"):
-            self.update("No data")
+            self.plt.clear_data()
+            self.refresh()
             return
         if self.size.width < 10 or self.size.height < 4:
             return
         width = max(self.size.width - 1, 10)
         height = max(self.size.height - 1, 4)
-        plt.clear_data()
-        plt.plotsize(width, height)
+        self.plt.clear_data()
+        self.plt.plotsize(width, height)
         x = list(range(len(hourly["hours"])))
-        plt.plot(x, hourly[self._key], color=self._color)
-        plt.ylim(*self._ylim)
+        self.plt.plot(x, hourly[self._key], color=self._color)
+        self.plt.ylim(*self._ylim)
         tick_step = max(len(x) // 2, 1)
         ticks = {i: hourly["hours"][i] for i in range(0, len(x), tick_step)}
-        plt.xticks(list(ticks.keys()), list(ticks.values()))
-        plt.grid(True, False)
-
-        chart = Text(self._label + "\n")
-        chart.append_text(Text.from_ansi(plt.build()))
-        self.update(chart)
+        self.plt.xticks(list(ticks.keys()), list(ticks.values()))
+        self.plt.grid(True, False)
+        self.plt.title(self._label)
+        self.refresh()
 
 
 class WeatherChart(Static):

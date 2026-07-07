@@ -12,8 +12,8 @@ dependencies = [
     "pytz==2025.2",
     "python-dotenv==1.2.1",
     "requests==2.32.5",
-    "plotext==5.3.2",
     "textual==6.5.0",
+    "textual-plotext==1.0.1",
 ]
 
 [project.optional-dependencies]
