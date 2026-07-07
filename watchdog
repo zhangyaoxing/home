@@ -39,6 +39,20 @@ def start_app():
     return pid
 
 
+def pull_changes():
+    """Pull remote changes into the local branch. Returns True on success."""
+    result = subprocess.run(
+        ["git", "pull", "--ff-only", "--quiet"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        print(f"{timestamp()} Pull failed: {stderr}")
+        return False
+    return True
+
+
 def app_exited(pid):
     """Check whether the given child has exited. Returns exit_code or None."""
     try:
@@ -83,13 +97,18 @@ def run_loop():
                 while not has_changes():
                     time.sleep(CHECK_INTERVAL)
 
-            pid = _restart()
+            print(f"{timestamp()} Changes detected, pulling...")
+            if pull_changes():
+                pid = _restart()
+            else:
+                print(f"{timestamp()} Skipping restart due to pull failure.")
             continue
 
         if has_changes():
-            print(f"{timestamp()} Changes detected, restarting...")
-            kill_app(pid)
-            pid = _restart()
+            print(f"{timestamp()} Changes detected, pulling...")
+            if pull_changes():
+                kill_app(pid)
+                pid = _restart()
 
 
 def _restart():
