@@ -7,7 +7,7 @@ Screen {
 
 #train {
     layout: horizontal;
-    border: double greenyellow;
+    border: none;
     column-span: 3;
     height: 100%;
 }
@@ -80,9 +80,9 @@ Screen {
 #sensors {
     width: 100%;
     height: 100%;
-    border: double greenyellow;
+    border: solid greenyellow;
     overflow: hidden;
-    padding: 1;
+    padding: 0;
 }
 
 .sensor-row {
@@ -143,7 +143,7 @@ Rule {
 }
 
 #sensors.panel-warning-active {
-    border: double red;
+    border: solid red;
     border-title-color: red;
     border-title-style: bold;
     background: #5f0000;
@@ -169,7 +169,7 @@ Weather {
     column-span: 4;
     width: 100%;
     height: 100%;
-    border: double greenyellow;
+    border: none;
 }
 WeatherElement {
     width: 100%;

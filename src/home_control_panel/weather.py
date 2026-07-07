@@ -170,7 +170,7 @@ class WeatherChart(Static):
     _day_index = 0
 
     def on_mount(self):
-        self.border_title = "Details"
+        self.border_title = "Weather Details"
         self._metrics = [
             WeatherMetricChart("Temp °C", "temp", (255, 100, 100), (0, 35)),
             WeatherMetricChart("Humidity %", "humidity", (100, 100, 255), (0, 100)),
@@ -204,14 +204,14 @@ class WeatherChart(Static):
             return
         hourly = self._hourly_days[self._day_index]
         day_label = self._format_day_label(hourly.get("date"), self._day_index)
-        self.border_title = f"Details {day_label}"
+        self.border_title = f"Weather Details {day_label}"
         self.border_subtitle = ""
         for metric in self._metrics:
             metric.refresh_data(hourly)
 
     @staticmethod
     def _format_day_label(date, index):
-        return _format_day_label(date, index)
+        return _format_forecast_day_label(date, index)
 
 
 class Weather(Static):
