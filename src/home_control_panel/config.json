@@ -48,11 +48,13 @@
   "probabilityWarningThreshold": 50,
   "sensors": {
     "temp": [
+      "sensor.multi_sensor_temperature",
       "sensor.wen_shi_du_chuan_gan_qi_temperature",
       "sensor.wen_shi_du_chuan_gan_qi_2_temperature",
       "sensor.temp_hum_temperature"
     ],
     "hum": [
+      "sensor.multi_sensor_humidity",
       "sensor.wen_shi_du_chuan_gan_qi_humidity",
       "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
       "sensor.temp_hum_humidity",
