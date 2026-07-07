@@ -16,7 +16,11 @@ url = config["trainApiUrl"]
 def is_freq_throttled(last_call_time):
     now = datetime.now()
     hour = now.hour
-    cfg = [cfg for cfg in config["apiFreqControl"] if hour >= cfg["from"] and hour < cfg["to"]][0]
+    cfg = next(
+        cfg
+        for cfg in config["apiFreqControl"]
+        if cfg["from"] <= hour < cfg["to"]
+    )
     interval = cfg["intervalMin"]
     delta = (now - last_call_time).total_seconds() / 60
     return delta < interval

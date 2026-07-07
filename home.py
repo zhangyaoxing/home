@@ -10,7 +10,7 @@ from textual.binding import Binding
 
 from libs.utils import config
 from sensors import Sensors
-from train import Train
+from train import Train, TrainSchedule, TrainStationMessage
 from weather import Weather
 
 logger = logging.getLogger(__name__)
@@ -40,9 +40,10 @@ class HomeApp(App):
         self.exit()
     
     def action_refresh(self):
-        self.query_one("TrainStationMessage").refresh_message()
-        # TODO: refresh train schedule
-        # TODO: refresh weather
+        self.query_one("#message", TrainStationMessage).refresh_message()
+        self.query_one("#schedule", TrainSchedule).refresh_schedule()
+        self.query_one("#weather", Weather).refresh_data()
+        self.query_one("#sensors", Sensors).refresh_data()
 
 if __name__ == "__main__":
     logger.info("Starting HomeApp...")

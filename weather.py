@@ -8,6 +8,9 @@ from libs.utils import load_config
 
 logger = logging.getLogger(__name__)
 config = load_config()
+WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
+
+
 class WeatherElement(Label):
     def __init__(self, label="", text="", **kwargs):
         super().__init__(**kwargs)
@@ -31,22 +34,7 @@ class WeatherElement(Label):
         self._text.update(value)
 
 def winddir(angle):
-    if angle < 22.5 or angle >= 337.5:
-        return "↓"
-    if angle >= 22.5 and angle < 67.5:
-        return "↙"
-    if angle >= 67.5 and angle < 112.5:
-        return "←"
-    if angle >= 112.5 and angle < 157.5:
-        return "↖"
-    if angle >= 157.5 and angle < 202.5:
-        return "↑"
-    if angle >= 202.5 and angle < 247.5:
-        return "↗"
-    if angle >= 247.5 and angle < 292.5:
-        return "→"
-    if angle >= 292.5 and angle < 337.5:
-        return "↘"
+    return WIND_DIRECTIONS[int((angle + 22.5) // 45) % len(WIND_DIRECTIONS)]
 
 class WeatherToday(Static):
     _elements = {}

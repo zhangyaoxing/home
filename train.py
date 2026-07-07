@@ -43,8 +43,8 @@ class TrainStationMessage(Static):
         exclusive=True,
         exit_on_error=False,
     )
-    def load_message(self):
-        if is_freq_throttled(self.last_refresh):
+    def load_message(self, force=False):
+        if not force and is_freq_throttled(self.last_refresh):
             return
 
         error, messages_json = api_train_message()
@@ -82,7 +82,7 @@ class TrainStationMessage(Static):
         self.set_interval(config["apiFreqCheck"], self.load_message)
 
     def refresh_message(self):
-        self.load_message()
+        self.load_message(True)
 
 
 class ScheduleLine(Horizontal):
@@ -238,8 +238,8 @@ class TrainSchedule(Static):
         exclusive=True,
         exit_on_error=False,
     )
-    def load_schedule(self):
-        if is_freq_throttled(self.last_refresh):
+    def load_schedule(self, force=False):
+        if not force and is_freq_throttled(self.last_refresh):
             return
 
         error, schedule_json = api_train_announcement()
@@ -281,6 +281,9 @@ class TrainSchedule(Static):
         self.set_timer(1, self.load_stations)
         self.set_interval(config["stationUpdateInterval"], self.load_stations)
         self.set_interval(config["apiFreqCheck"], self.load_schedule)
+
+    def refresh_schedule(self):
+        self.load_schedule(True)
 
 
 class Train(Static):

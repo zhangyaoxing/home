@@ -13,13 +13,13 @@ from libs.utils import config
 
 logger = logging.getLogger(__name__)
 HUMIDITY_WARNING_THRESHOLD = 35
+HUMIDITY_ENTITY_IDS = set(config["sensors"]["hum"])
 
 
 def low_humidity_sensors(data):
-    humidity_entities = set(config["sensors"]["hum"])
     low_sensors = []
     for sensor in data["sensors"]:
-        if sensor["entity_id"] not in humidity_entities:
+        if sensor["entity_id"] not in HUMIDITY_ENTITY_IDS:
             continue
         try:
             humidity = float(sensor["state"])
@@ -101,6 +101,7 @@ class Sensors(Static):
         super().__init__(*args, **kwargs)
         self._low_sensors = []
         self._warning_timer = None
+        self._sensor_signature = None
 
     def _warning_screen(self):
         return next(
@@ -135,6 +136,22 @@ class Sensors(Static):
             self._warning_timer.stop()
             self._warning_timer = None
 
+    def _apply_humidity_warning(self, data):
+        low_sensors = low_humidity_sensors(data)
+        self._low_sensors = low_sensors
+        warning_screen = self._warning_screen()
+        if not low_sensors:
+            if warning_screen is not None:
+                warning_screen.dismiss()
+            self._stop_warning_cycle()
+        elif warning_screen is not None:
+            warning_screen.query_one(HumidityWarningPanel).update_sensors(
+                low_sensors
+            )
+        elif self._warning_timer is None:
+            self.app.push_screen(HumidityWarningScreen(low_sensors))
+            self._schedule_warning_toggle()
+
     @work(
         thread=True,
         group="sensor-refresh",
@@ -153,25 +170,23 @@ class Sensors(Static):
             self.set_loading(False)
             return
 
-        self.remove_children()
-        for sensor in data["sensors"]:
-            self.mount(SensorRow(sensor))
-        self.set_loading(False)
-
-        low_sensors = low_humidity_sensors(data)
-        self._low_sensors = low_sensors
-        warning_screen = self._warning_screen()
-        if not low_sensors:
-            if warning_screen is not None:
-                warning_screen.dismiss()
-            self._stop_warning_cycle()
-        elif warning_screen is not None:
-            warning_screen.query_one(HumidityWarningPanel).update_sensors(
-                low_sensors
+        sensor_signature = tuple(
+            (
+                sensor["entity_id"],
+                sensor["name"],
+                sensor["state"],
+                sensor["unit"],
             )
-        elif self._warning_timer is None:
-            self.app.push_screen(HumidityWarningScreen(low_sensors))
-            self._schedule_warning_toggle()
+            for sensor in data["sensors"]
+        )
+        if sensor_signature != self._sensor_signature:
+            self.remove_children()
+            for sensor in data["sensors"]:
+                self.mount(SensorRow(sensor))
+            self._sensor_signature = sensor_signature
+
+        self.set_loading(False)
+        self._apply_humidity_warning(data)
 
     def on_mount(self):
         self.border_title = "Sensors"
