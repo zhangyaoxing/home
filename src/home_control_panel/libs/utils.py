@@ -27,7 +27,8 @@ def get_script_path(filename = None):
         return str((script_folder / ".." / filename).resolve())
 
 config_path = get_script_path("config.json")
-config = json.load(open(config_path))
+with open(config_path) as f:
+    config = json.load(f)
 config["trainKey"] = config.get("trainKey", os.environ.get("trainKey", None))
 config["haKey"] = config.get("haKey", os.environ.get("haKey", None))
 if config["trainKey"] is None:

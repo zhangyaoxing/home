@@ -172,16 +172,9 @@ Rule {
     margin: 0
 }
 
-#weather_today {
-    layout: vertical;
-    border: solid greenyellow;
-    width: 30%;
-    height: 100%;
-}
-
 #weather_next {
     border: solid greenyellow;
-    width: 70%;
+    width: 100%;
     height: 100%;
 }
 

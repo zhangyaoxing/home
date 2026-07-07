@@ -45,6 +45,20 @@ WSYMB2_MAP = {
     27: "Heavy snowfall",
 }
 
+WSYMB2_ICON = {
+    1: "\u2600", 2: "\U0001F324", 3: "\u26C5",
+    4: "\U0001F325", 5: "\u2601", 6: "\u2601",
+    7: "\U0001F32B",
+    8: "\U0001F327", 9: "\U0001F327", 10: "\U0001F327",
+    11: "\u26C8",
+    12: "\U0001F328", 13: "\U0001F328", 14: "\U0001F328",
+    15: "\U0001F328", 16: "\U0001F328", 17: "\U0001F328",
+    18: "\U0001F327", 19: "\U0001F327", 20: "\U0001F327",
+    21: "\u26C8",
+    22: "\U0001F328", 23: "\U0001F328", 24: "\U0001F328",
+    25: "\u2744", 26: "\u2744", 27: "\u2744",
+}
+
 
 def _group_by_day(time_series):
     days = defaultdict(list)
@@ -63,6 +77,10 @@ def _aggregate_day(entries):
     gusts = []
     clouds = []
     symbols = []
+    visibilities = []
+    precip_probs = []
+    frozen_probs = []
+    thunder_probs = []
     snow = 0.0
 
     for entry in entries:
@@ -73,9 +91,13 @@ def _aggregate_day(entries):
         gust = d.get("wind_speed_of_gust")
         r = d.get("relative_humidity")
         tcc = d.get("cloud_area_fraction")
+        vis = d.get("visibility_in_air")
         wsymb = d.get("symbol_code")
         pmean = d.get("precipitation_amount_mean")
         pfrozen = d.get("precipitation_frozen_part", 0)
+        precip = d.get("probability_of_precipitation")
+        frozen = d.get("probability_of_frozen_precipitation")
+        thunder = d.get("thunderstorm_probability")
 
         if t is not None:
             temps.append(t)
@@ -89,6 +111,14 @@ def _aggregate_day(entries):
             gusts.append(gust)
         if tcc is not None:
             clouds.append(tcc)
+        if vis is not None:
+            visibilities.append(vis)
+        if precip is not None:
+            precip_probs.append(precip)
+        if frozen is not None:
+            frozen_probs.append(frozen)
+        if thunder is not None:
+            thunder_probs.append(thunder)
         if wsymb is not None:
             symbols.append(int(wsymb))
 
@@ -114,6 +144,10 @@ def _aggregate_day(entries):
         "windgust": round(gust_max * mps_to_kmh, 1),
         "winddir": round(wd_avg),
         "cloudcover": round(sum(clouds) / len(clouds) * 12.5) if clouds else 0,
+        "visibility": round(sum(visibilities) / len(visibilities), 1) if visibilities else 0,
+        "precip_probability": max(precip_probs) if precip_probs else 0,
+        "frozen_probability": max(frozen_probs) if frozen_probs else 0,
+        "thunderstorm_probability": max(thunder_probs) if thunder_probs else 0,
         "snow": snow,
         "snowdepth": 0,
         "uvindex": 0,
@@ -129,7 +163,8 @@ def _dominant_symbol(symbols):
     counts = defaultdict(int)
     for s in symbols:
         counts[s] += 1
-    return WSYMB2_MAP.get(max(counts, key=counts.get), "—")
+    code = max(counts, key=counts.get)
+    return WSYMB2_ICON.get(code, "—")
 
 
 def _build_current(entry):
@@ -140,12 +175,16 @@ def _build_current(entry):
     wd = d.get("wind_from_direction") or 0
     r = d.get("relative_humidity") or 0
     tcc = d.get("cloud_area_fraction") or 0
+    vis = d.get("visibility_in_air") or 0
     wsymb = d.get("symbol_code")
+    precip = d.get("probability_of_precipitation") or 0
+    frozen = d.get("probability_of_frozen_precipitation") or 0
+    thunder = d.get("thunderstorm_probability") or 0
 
     mps_to_kmh = 3.6
     return {
         "datetime": entry["time"],
-        "conditions": WSYMB2_MAP.get(int(wsymb), "—") if wsymb else "—",
+        "conditions": WSYMB2_ICON.get(int(wsymb), "—") if wsymb else "—",
         "temp": t,
         "feelslike": 0,
         "humidity": r,
@@ -153,6 +192,10 @@ def _build_current(entry):
         "windgust": round(gust * mps_to_kmh, 1),
         "winddir": wd,
         "cloudcover": round(tcc * 12.5),
+        "visibility": round(vis, 1),
+        "precip_probability": precip,
+        "frozen_probability": frozen,
+        "thunderstorm_probability": thunder,
         "uvindex": 0,
         "sunrise": "—",
         "sunset": "—",
