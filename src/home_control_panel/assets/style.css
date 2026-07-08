@@ -152,6 +152,20 @@ Rule {
     background: #5f0000;
 }
 
+#sensors.panel-warning-level1 {
+    border: solid green;
+    border-title-color: green;
+    border-title-style: bold;
+    background: #004400;
+}
+
+#sensors.panel-warning-level2 {
+    border: solid yellow;
+    border-title-color: yellow;
+    border-title-style: bold;
+    background: #4a4a00;
+}
+
 #weather_next.panel-warning-active {
     border: solid red;
     border-title-color: red;
@@ -161,6 +175,28 @@ Rule {
 
 #weather_next.panel-warning-active .forecast {
     background: #5f0000;
+}
+
+#weather_next.panel-warning-level1 {
+    border: solid green;
+    border-title-color: green;
+    border-title-style: bold;
+    background: #004400;
+}
+
+#weather_next.panel-warning-level1 .forecast {
+    background: #004400;
+}
+
+#weather_next.panel-warning-level2 {
+    border: solid yellow;
+    border-title-color: yellow;
+    border-title-style: bold;
+    background: #4a4a00;
+}
+
+#weather_next.panel-warning-level2 .forecast {
+    background: #4a4a00;
 }
 
 #weather_next .forecast {

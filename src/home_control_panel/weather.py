@@ -12,9 +12,19 @@ from home_control_panel.libs.utils import load_config
 logger = logging.getLogger(__name__)
 config = load_config()
 WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
-PROB_THRESHOLD = config["probabilityWarningThreshold"]
+PROB_THRESHOLDS = config["probabilityWarningThreshold"]
 PROB_WARNING_LOOKAHEAD_HOURS = 6
 CHART_AXIS_STYLE = "#666666"
+
+
+def _prob_level(value):
+    if value > PROB_THRESHOLDS[2]:
+        return 3
+    if value > PROB_THRESHOLDS[1]:
+        return 2
+    if value > PROB_THRESHOLDS[0]:
+        return 1
+    return 0
 
 
 def winddir(angle):
@@ -22,9 +32,10 @@ def winddir(angle):
 
 
 def _fmt_prob(value):
-    return Text(
-        "{p:.0f}%".format(p=value), style="bold red" if value > PROB_THRESHOLD else ""
-    )
+    level = _prob_level(value)
+    colors = {1: "green", 2: "yellow", 3: "red"}
+    style = f"bold {colors[level]}" if level else ""
+    return Text(f"{value:.0f}%", style=style)
 
 
 def _fmt_temp(t):
@@ -424,15 +435,20 @@ class Weather(Static):
         ]
         hourly_details = data.get("hourlyDetails", [])
         messages = []
+        level = 0
         for key, icon in prob_keys:
             next_max = self._max_in_next_hours(
                 hourly_details, key, PROB_WARNING_LOOKAHEAD_HOURS
             )
-            if next_max > PROB_THRESHOLD:
+            prob_level = _prob_level(next_max)
+            if prob_level:
                 messages.append(
                     f"{icon} {next_max:.0f}% next {PROB_WARNING_LOOKAHEAD_HOURS}h"
                 )
-        self.app.warning_manager.update("weather", messages)
+                level = max(level, prob_level)
+        self.app.warning_manager.update(
+            "weather", messages, level=level if level > 0 else 3,
+        )
 
     @staticmethod
     def _max_in_next_hours(hourly_details, key, hours):

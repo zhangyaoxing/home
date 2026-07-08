@@ -1,3 +1,10 @@
+WARNING_CLASSES = {
+    1: "panel-warning-level1",
+    2: "panel-warning-level2",
+    3: "panel-warning-active",
+}
+
+
 class WarningManager:
     BLINK_INTERVAL = 1
     TARGETS = {
@@ -12,9 +19,9 @@ class WarningManager:
         self._timer = None
         self._visible = False
 
-    def update(self, source, messages):
+    def update(self, source, messages, level=3):
         if messages:
-            self._sources[source] = messages
+            self._sources[source] = (messages, level)
         else:
             self._sources.pop(source, None)
 
@@ -38,7 +45,7 @@ class WarningManager:
 
     def _show(self):
         self._dismiss_inactive()
-        for source in self._sources:
+        for source, (messages, level) in self._sources.items():
             selector = self.TARGETS.get(source)
             if selector is None:
                 continue
@@ -46,7 +53,8 @@ class WarningManager:
                 target = self._app.query_one(selector)
             except Exception:
                 continue
-            target.add_class("panel-warning-active")
+            css_class = WARNING_CLASSES.get(level, WARNING_CLASSES[3])
+            target.add_class(css_class)
         self._visible = True
 
     def _dismiss_inactive(self):
@@ -57,7 +65,8 @@ class WarningManager:
                 target = self._app.query_one(selector)
             except Exception:
                 continue
-            target.remove_class("panel-warning-active")
+            for cls in WARNING_CLASSES.values():
+                target.remove_class(cls)
 
     def _dismiss(self):
         for selector in self.TARGETS.values():
@@ -65,5 +74,6 @@ class WarningManager:
                 target = self._app.query_one(selector)
             except Exception:
                 continue
-            target.remove_class("panel-warning-active")
+            for cls in WARNING_CLASSES.values():
+                target.remove_class(cls)
         self._visible = False

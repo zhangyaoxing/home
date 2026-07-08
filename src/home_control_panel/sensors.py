@@ -11,9 +11,11 @@ from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
 HUMIDITY_ENTITY_IDS = set(config["sensors"]["hum"])
+PLANT_HUMIDITY_ENTITY_IDS = set(config["sensors"]["plant_hum"])
 
 
 def low_humidity_sensors(data):
+    thresholds = config["humidityWarningThreshold"]
     low_sensors = []
     for sensor in data["sensors"]:
         if sensor["entity_id"] not in HUMIDITY_ENTITY_IDS:
@@ -22,27 +24,54 @@ def low_humidity_sensors(data):
             humidity = float(sensor["state"])
         except (TypeError, ValueError):
             continue
-        if humidity < config["humidityWarningThreshold"]:
-            low_sensors.append(sensor)
+        if humidity < thresholds[2]:
+            low_sensors.append((sensor, 3))
+        elif humidity < thresholds[1]:
+            low_sensors.append((sensor, 2))
+        elif humidity < thresholds[0]:
+            low_sensors.append((sensor, 1))
     return low_sensors
 
 
+def _plant_hum_low(data):
+    thresholds = config["plantHumWarningThreshold"]
+    low = []
+    for sensor in data["sensors"]:
+        if sensor["entity_id"] not in PLANT_HUMIDITY_ENTITY_IDS:
+            continue
+        try:
+            humidity = float(sensor["state"])
+        except (TypeError, ValueError):
+            continue
+        if humidity < thresholds[2]:
+            low.append((sensor, 3))
+        elif humidity < thresholds[1]:
+            low.append((sensor, 2))
+        elif humidity < thresholds[0]:
+            low.append((sensor, 1))
+    return low
+
+
+_LEVEL_COLORS = {1: "green", 2: "yellow", 3: "red"}
+
+
 class SensorRow(Horizontal):
-    def __init__(self, sensor, exceeded=False):
+    def __init__(self, sensor, level=0):
         super().__init__(classes="sensor-row")
         self.sensor = sensor
-        self.exceeded = exceeded
+        self.level = level
 
     def compose(self) -> ComposeResult:
         name = self.sensor["name"]
         value = f'{self.sensor["state"]}{self.sensor["unit"]}'
-        if self.exceeded:
+        if self.level:
+            color = _LEVEL_COLORS.get(self.level, "red")
             yield Static(
                 escape(name),
                 classes="sensor-name",
             )
             yield Static(
-                f"[bold red]{escape(value)}[/]",
+                f"[bold {color}]{escape(value)}[/]",
                 classes="sensor-value sensor-exceeded",
             )
         else:
@@ -64,15 +93,29 @@ class Sensors(Static):
     def compose(self) -> ComposeResult:
         yield Static()
 
-    def _apply_humidity_warning(self, data, low_sensors=None):
+    def _apply_humidity_warning(self, data, low_sensors=None, plant_low=None):
         if low_sensors is None:
             low_sensors = low_humidity_sensors(data)
+        if plant_low is None:
+            plant_low = _plant_hum_low(data)
+
         messages = []
-        for sensor in low_sensors:
+        level = 0
+        for sensor, sensor_level in low_sensors:
             messages.append(
                 f'{sensor["name"]}: {sensor["state"]}{sensor["unit"]}'
             )
-        self.app.warning_manager.update("sensors", messages)
+            level = max(level, sensor_level)
+
+        for sensor, plant_level in plant_low:
+            messages.append(
+                f'{sensor["name"]}: {sensor["state"]}{sensor["unit"]}'
+            )
+            level = max(level, plant_level)
+
+        self.app.warning_manager.update(
+            "sensors", messages, level=level if level > 0 else 3,
+        )
 
     @work(
         thread=True,
@@ -102,16 +145,18 @@ class Sensors(Static):
             for sensor in data["sensors"]
         )
         low_sensors = low_humidity_sensors(data)
+        plant_low = _plant_hum_low(data)
         if sensor_signature != self._sensor_signature:
-            exceeded_ids = {s["entity_id"] for s in low_sensors}
+            exceeded_levels = {s["entity_id"]: lvl for s, lvl in low_sensors}
+            exceeded_levels.update({s["entity_id"]: lvl for s, lvl in plant_low})
             self.remove_children()
             for sensor in data["sensors"]:
-                exceeded = sensor["entity_id"] in exceeded_ids
-                self.mount(SensorRow(sensor, exceeded=exceeded))
+                level = exceeded_levels.get(sensor["entity_id"], 0)
+                self.mount(SensorRow(sensor, level=level))
             self._sensor_signature = sensor_signature
 
         self.set_loading(False)
-        self._apply_humidity_warning(data, low_sensors)
+        self._apply_humidity_warning(data, low_sensors, plant_low)
 
     def on_mount(self):
         self.border_title = "In-House Sensors"

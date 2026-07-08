@@ -43,9 +43,22 @@
   "weatherDetailsInterval": 10,
   "timezone": "Europe/Stockholm",
   "sensorRefreshInterval": 30,
-  "humidityWarningThreshold": 35,
+  "humidityWarningThreshold": [
+    35,
+    30,
+    25
+  ],
+  "plantHumWarningThreshold": [
+    50,
+    40,
+    30
+  ],
   "humidityWarningInterval": 5,
-  "probabilityWarningThreshold": 50,
+  "probabilityWarningThreshold": [
+    30,
+    50,
+    70
+  ],
   "sensors": {
     "temp": [
       "sensor.multi_sensor_temperature",
@@ -57,7 +70,9 @@
       "sensor.multi_sensor_humidity",
       "sensor.wen_shi_du_chuan_gan_qi_humidity",
       "sensor.wen_shi_du_chuan_gan_qi_2_humidity",
-      "sensor.temp_hum_humidity",
+      "sensor.temp_hum_humidity"
+    ],
+    "plant_hum": [
       "sensor.plant_hum_1_humidity",
       "sensor.plant_hum_humidity",
       "sensor.hobeian_zg_303z_humidity"
