@@ -1,22 +1,14 @@
-from datetime import datetime
-import hashlib
 import logging
+from datetime import datetime
 
 import pytz
 from rich.markup import escape
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Rule, Static
 
 from home_control_panel.common_widgets import ScrollingLabel
-from home_control_panel.libs.traffic_api import (
-    api_train_announcement,
-    api_train_message,
-    api_train_stations,
-    is_freq_throttled,
-    summarize_notice,
-)
+from home_control_panel.libs.cache import cache_mtime, read_cache
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -35,60 +27,37 @@ def _normalize_message(message):
 
 
 class TrainStationMessage(Static):
+    CACHE_FILE = "train_messages.json"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.last_refresh = datetime.min
-        self._seen_messages = set()
-        self._summaries = {}
+        self._cache_mtime = 0
 
     def compose(self) -> ComposeResult:
         yield Static()
 
-    @work(
-        thread=True,
-        group="train-message-refresh",
-        exclusive=True,
-        exit_on_error=False,
-    )
-    def load_message(self, force=False):
-        if not force and is_freq_throttled(self.last_refresh):
+    def _check_cache(self):
+        mtime = cache_mtime(self.CACHE_FILE)
+        if mtime <= self._cache_mtime:
+            return
+        self._cache_mtime = mtime
+        logger.info("Reloading station messages from cache")
+
+        cached = read_cache(self.CACHE_FILE)
+        if cached is None:
+            self.set_loading(False)
             return
 
-        error, messages_json = api_train_message()
-        if error is not None:
-            logger.error("Can't access API to get train messages.")
-            return
-
-        messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
-        new_summaries = {}
-        for message in messages:
-            text = _normalize_message(message.get("FreeText", ""))
-            if not text:
-                continue
-            digest = hashlib.md5(text.encode()).hexdigest()
-            if digest not in self._seen_messages:
-                new_summaries[digest] = summarize_notice(text)
-
-        self._summaries.update(new_summaries)
-        self.app.call_from_thread(self._apply_messages, messages_json)
-
-    def _apply_messages(self, messages_json):
-        messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
+        messages = cached["data"]["messages"]
         messages = sorted(
             messages,
-            key=lambda message: message.get("Status") != "Lag",
+            key=lambda m: m["raw"].get("Status") != "Lag",
         )
 
         self.remove_children()
-        self._seen_messages.clear()
-        for message in messages:
-            text = _normalize_message(message.get("FreeText", ""))
-            if text:
-                digest = hashlib.md5(text.encode()).hexdigest()
-                self._seen_messages.add(digest)
-                display_text = self._summaries.get(digest, text)
-            else:
-                display_text = text
+        for entry in messages:
+            message = entry["raw"]
+            display_text = entry["summary"]
             status_class = "lag" if message.get("Status") == "Lag" else "normal"
             self.mount(
                 ScrollingLabel(
@@ -99,16 +68,15 @@ class TrainStationMessage(Static):
             self.mount(Rule())
 
         self.set_loading(False)
-        self.last_refresh = datetime.now()
 
     def on_mount(self):
         self.border_title = "Station Notices"
         self.set_loading(True)
-        self.set_timer(1, self.load_message)
-        self.set_interval(config["message"]["updateIntervalMin"] * 60, self.load_message)
+        self.set_interval(5, self._check_cache)
 
     def refresh_message(self):
-        self.load_message(True)
+        self._cache_mtime = 0
+        self._check_cache()
 
 
 class ScheduleLine(Horizontal):
@@ -212,63 +180,33 @@ class ScheduleEntry(Static):
 
 
 class TrainSchedule(Static):
+    CACHE_FILE = "train_schedule.json"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stations = {}
-        self.last_refresh = datetime.min
+        self._cache_mtime = 0
 
     def compose(self) -> ComposeResult:
         yield Static()
 
-    @work(
-        thread=True,
-        group="train-stations-refresh",
-        exclusive=True,
-        exit_on_error=False,
-    )
-    def load_stations(self):
-        error, stations_json = api_train_stations()
-        if error is not None:
-            logger.error("Can't access API to get train stations.")
-            self.app.call_from_thread(self._apply_stations, None)
+    def _check_cache(self):
+        mtime = cache_mtime(self.CACHE_FILE)
+        if mtime <= self._cache_mtime:
+            return
+        self._cache_mtime = mtime
+        logger.info("Reloading train schedule from cache")
+
+        cached = read_cache(self.CACHE_FILE)
+        if cached is None:
+            self.set_loading(False)
             return
 
-        self.app.call_from_thread(self._apply_stations, stations_json)
+        data = cached["data"]
+        self.stations = data.get("station_names", {})
+        self.border_subtitle = self.stations.get(config["myStationCode"], "")
 
-    def _apply_stations(self, stations_json):
-        if stations_json is not None:
-            for station in stations_json["RESPONSE"]["RESULT"][0]["TrainStation"]:
-                self.stations[station["LocationSignature"]] = station[
-                    "AdvertisedLocationName"
-                ]
-            logger.debug("Stations loaded: %s", self.stations)
-            self.border_subtitle = self.stations.get(config["myStationCode"], "")
-
-        # The initial schedule must not render before station codes can be
-        # translated. If station loading failed, still show the schedule using
-        # the codes rather than leaving the panel empty.
-        if self.last_refresh == datetime.min:
-            self.load_schedule()
-
-    @work(
-        thread=True,
-        group="train-schedule-refresh",
-        exclusive=True,
-        exit_on_error=False,
-    )
-    def load_schedule(self, force=False):
-        if not force and is_freq_throttled(self.last_refresh):
-            return
-
-        error, schedule_json = api_train_announcement()
-        if error is not None:
-            logger.error("Can't access API to get train schedules.")
-            return
-
-        self.app.call_from_thread(self._apply_schedule, schedule_json)
-
-    def _apply_schedule(self, schedule_json):
-        schedules = schedule_json["RESPONSE"]["RESULT"][0]["TrainAnnouncement"]
+        schedules = data.get("announcements", [])
         now = datetime.now(tz=pytz.UTC)
         self.remove_children()
         self.mount(
@@ -288,17 +226,15 @@ class TrainSchedule(Static):
             self.mount(ScheduleEntry(schedule, self.stations))
 
         self.set_loading(False)
-        self.last_refresh = datetime.now()
 
     def on_mount(self):
         self.border_title = "Train Schedules"
         self.set_loading(True)
-        self.set_timer(1, self.load_stations)
-        self.set_interval(config["stationUpdateInterval"], self.load_stations)
-        self.set_interval(config["apiFreqCheck"], self.load_schedule)
+        self.set_interval(5, self._check_cache)
 
     def refresh_schedule(self):
-        self.load_schedule(True)
+        self._cache_mtime = 0
+        self._check_cache()
 
 
 class Train(Static):

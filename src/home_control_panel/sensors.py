@@ -1,12 +1,11 @@
 import logging
 
 from rich.markup import escape
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Static
 
-from home_control_panel.libs.ha_api import api_ha
+from home_control_panel.libs.cache import cache_mtime, read_cache
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -86,9 +85,12 @@ class SensorRow(Horizontal):
 
 
 class Sensors(Static):
+    CACHE_FILE = "sensors.json"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._sensor_signature = None
+        self._cache_mtime = 0
 
     def compose(self) -> ComposeResult:
         yield Static()
@@ -113,35 +115,27 @@ class Sensors(Static):
             )
             level = max(level, plant_level)
 
-        self.app.warning_manager.update(
+        self.app.warning_manager.update(  # pyright: ignore[reportAttributeAccessIssue]
             "sensors", messages, level=level if level > 0 else 3,
         )
 
-    @work(
-        thread=True,
-        group="sensor-refresh",
-        exclusive=True,
-        exit_on_error=False,
-    )
-    def refresh_data(self):
-        error, data = api_ha()
-        self.app.call_from_thread(self._apply_refresh, error, data)
+    def _check_cache(self):
+        mtime = cache_mtime(self.CACHE_FILE)
+        if mtime <= self._cache_mtime:
+            return
+        self._cache_mtime = mtime
+        logger.info("Reloading sensors from cache")
 
-    def _apply_refresh(self, error, data):
-        if error is not None:
-            logger.error("Can't access Home Assistant API: %s", error)
+        cached = read_cache(self.CACHE_FILE)
+        if cached is None:
             self.remove_children()
             self.mount(Static("Unavailable", classes="sensor-error"))
             self.set_loading(False)
             return
 
+        data = cached["data"]
         sensor_signature = tuple(
-            (
-                sensor["entity_id"],
-                sensor["name"],
-                sensor["state"],
-                sensor["unit"],
-            )
+            (sensor["entity_id"], sensor["name"], sensor["state"], sensor["unit"])
             for sensor in data["sensors"]
         )
         low_sensors = low_humidity_sensors(data)
@@ -161,5 +155,8 @@ class Sensors(Static):
     def on_mount(self):
         self.border_title = "In-House Sensors"
         self.set_loading(True)
-        self.set_timer(1, self.refresh_data)
-        self.set_interval(config["sensorRefreshInterval"], self.refresh_data)
+        self.set_interval(5, self._check_cache)
+
+    def refresh_data(self):
+        self._cache_mtime = 0
+        self._check_cache()

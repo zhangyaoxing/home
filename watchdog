@@ -39,6 +39,18 @@ def start_app():
     return pid
 
 
+def start_api_service():
+    """Fork and exec the API service."""
+    pid = os.fork()
+    if pid == 0:
+        os.execvpe(
+            sys.executable,
+            [sys.executable, "-m", "home_control_panel.api_service"],
+            {**os.environ, "PYTHONPATH": "src"},
+        )
+    return pid
+
+
 def pull_changes():
     """Pull remote changes. Returns (success, pyproject_changed)."""
     before = _git_rev_parse("HEAD")
@@ -103,14 +115,27 @@ def app_exited(pid):
     return os.waitstatus_to_exitcode(status)
 
 
-def kill_app(pid):
-    os.kill(pid, signal.SIGTERM)
+def kill_process(pid, label):
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
     for _ in range(50):  # 5 seconds
         if app_exited(pid) is not None:
             return
         time.sleep(0.1)
-    os.kill(pid, signal.SIGKILL)
-    os.waitpid(pid, 0)
+    try:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
+    except (ProcessLookupError, ChildProcessError):
+        pass
+
+
+def kill_all(app_pid, api_pid):
+    if api_pid is not None:
+        kill_process(api_pid, "API service")
+    if app_pid is not None:
+        kill_process(app_pid, "App")
 
 
 def timestamp():
@@ -124,16 +149,18 @@ def update_dependencies_if_needed(pyproject_changed):
 
 
 def run_loop():
-    pid = start_app()
-    print(f"{timestamp()} App started (PID: {pid}).")
+    app_pid = start_app()
+    api_pid = start_api_service()
+    print(f"{timestamp()} App started (PID: {app_pid}), API service (PID: {api_pid}).")
 
     while True:
         time.sleep(CHECK_INTERVAL)
 
-        exit_code = app_exited(pid)
+        exit_code = app_exited(app_pid)
         if exit_code is not None:
             if exit_code == 0:
                 print(f"{timestamp()} App exited normally. Stopping.")
+                kill_all(app_pid, api_pid)
                 return
             print(f"{timestamp()} App crashed (exit {exit_code}).")
 
@@ -146,20 +173,27 @@ def run_loop():
             pulled, pyproject_changed = pull_changes()
             if pulled:
                 if update_dependencies_if_needed(pyproject_changed):
-                    pid = _restart()
+                    kill_all(app_pid, api_pid)
+                    app_pid, api_pid = _restart()
                 else:
                     print(f"{timestamp()} Skipping restart due to install failure.")
             else:
                 print(f"{timestamp()} Skipping restart due to pull failure.")
             continue
 
+        api_exit = app_exited(api_pid)
+        if api_exit is not None:
+            print(f"{timestamp()} API service crashed (exit {api_exit}), restarting...")
+            api_pid = start_api_service()
+            print(f"{timestamp()} API service restarted (PID: {api_pid}).")
+
         if has_changes():
             print(f"{timestamp()} Changes detected, pulling...")
             pulled, pyproject_changed = pull_changes()
             if pulled:
                 if update_dependencies_if_needed(pyproject_changed):
-                    kill_app(pid)
-                    pid = _restart()
+                    kill_all(app_pid, api_pid)
+                    app_pid, api_pid = _restart()
                 else:
                     print(f"{timestamp()} Skipping restart due to install failure.")
 
@@ -167,11 +201,14 @@ def run_loop():
 def _restart():
     print(f"{timestamp()} Restarting...")
     while True:
-        pid = start_app()
+        app_pid = start_app()
+        api_pid = start_api_service()
         time.sleep(2)
-        if app_exited(pid) is None:
-            print(f"{timestamp()} App started (PID: {pid}).")
-            return pid
+        app_ok = app_exited(app_pid) is None
+        api_ok = app_exited(api_pid) is None
+        if app_ok and api_ok:
+            print(f"{timestamp()} App started (PID: {app_pid}), API service (PID: {api_pid}).")
+            return app_pid, api_pid
         print(f"{timestamp()} Start failed, retrying in {RETRY_DELAY}s...")
         time.sleep(RETRY_DELAY)
 

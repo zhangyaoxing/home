@@ -200,7 +200,7 @@ def _dominant_symbol(symbols):
     counts = defaultdict(int)
     for s in symbols:
         counts[s] += 1
-    code = max(counts, key=counts.get)
+    code = max(counts, key=counts.__getitem__)
     return WSYMB2_ICON.get(code, "—")
 
 

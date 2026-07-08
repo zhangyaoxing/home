@@ -19,8 +19,11 @@ def underline(s: str) -> str: return colorize(4, s)
 def blink(s: str) -> str: return colorize(5, s)
 def reverse(s: str) -> str: return colorize(7, s)
 def invisible(s: str) -> str: return colorize(8, s)
-def get_script_path(filename = None):
-    script_folder = Path(dirname(abspath(getsourcefile(lambda:0))))
+def get_script_path(filename=None):
+    source = getsourcefile(lambda: 0)
+    if source is None:
+        source = __file__
+    script_folder = Path(dirname(abspath(source)))
     if filename is None:
         return str((script_folder / "..").resolve())
     else:

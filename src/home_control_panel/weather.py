@@ -2,11 +2,10 @@ import logging
 from datetime import datetime as dt, timedelta
 
 from rich.text import Text
-from textual import work
 from textual.widgets import DataTable, Static
 from textual_hires_canvas import Canvas, HiResMode, TextAlign
 
-from home_control_panel.libs.weather_api import api_weather
+from home_control_panel.libs.cache import cache_mtime, read_cache
 from home_control_panel.libs.utils import load_config
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ def _format_day_label_with_weekday(date, index, weekday_format):
 
 
 class WeatherNext(Static):
-    _table = None
+    _table: DataTable | None = None
 
     def on_mount(self):
         self.border_title = "Forecast"
@@ -96,6 +95,8 @@ class WeatherNext(Static):
         self.mount(self._table)
 
     def refresh_data(self, data):
+        if self._table is None:
+            return
         self._table.clear()
         current = data["currentConditions"]
         self._table.add_row(
@@ -129,6 +130,8 @@ class WeatherNext(Static):
             )
 
     def show_error(self):
+        if self._table is None:
+            return
         self._table.clear()
         self._table.add_row("Unavailable", "Weather service unavailable")
 
@@ -150,7 +153,7 @@ class WeatherMetricChart(Canvas):
         ]
         self._ylim = ylim
         self._right_ylim = right_ylim
-        self._hourly = None
+        self._hourly: dict | None = None
 
     def refresh_data(self, hourly):
         self._hourly = hourly
@@ -182,6 +185,7 @@ class WeatherMetricChart(Canvas):
         axis_x = 4
         plot_left = axis_x + 1
         plot_right = self.size.width - 1
+        axis_right_x = 0
         if has_right_axis:
             plot_right = self.size.width - 5
         plot_top = 1
@@ -252,6 +256,7 @@ class WeatherMetricChart(Canvas):
             for s in series_data:
                 values = s["values"]
                 if s["axis"] == "right":
+                    assert self._right_ylim is not None
                     y_min, y_max = self._right_ylim
                 else:
                     y_min, y_max = self._ylim
@@ -313,8 +318,8 @@ class WeatherMetricChart(Canvas):
 
 
 class WeatherChart(Static):
-    _metrics = None
-    _hourly_days = None
+    _metrics: list[WeatherMetricChart] | None = None
+    _hourly_days: list[dict] | None = None
 
     def on_mount(self):
         self.border_title = "Weather Details"
@@ -396,36 +401,37 @@ class WeatherChart(Static):
 
 
 class Weather(Static):
-    _weather_next = None
-    _weather_chart = None
+    CACHE_FILE = "weather.json"
+    _weather_next: WeatherNext | None = None
+    _weather_chart: WeatherChart | None = None
     _last_error = False
+    _cache_mtime = 0
 
-    @work(
-        thread=True,
-        group="weather-refresh",
-        exclusive=True,
-        exit_on_error=False,
-    )
-    def refresh_data(self):
-        error, data = api_weather()
-        self.app.call_from_thread(self._apply_refresh, error, data)
+    def _check_cache(self):
+        mtime = cache_mtime(self.CACHE_FILE)
+        if mtime <= self._cache_mtime:
+            return
+        self._cache_mtime = mtime
+        logger.info("Reloading weather from cache")
 
-    def _apply_refresh(self, error, data):
-        if error is not None:
+        cached = read_cache(self.CACHE_FILE)
+        if cached is None:
             if not self._last_error:
-                logger.error(
-                    "Can't access weather API (%s)",
-                    type(error).__name__,
-                )
+                logger.error("Weather cache unavailable")
             self._last_error = True
-            self._weather_next.show_error()
+            if self._weather_next is not None:
+                self._weather_next.show_error()
             self.set_loading(False)
-        else:
-            self._last_error = False
+            return
+
+        data = cached["data"]
+        self._last_error = False
+        if self._weather_next is not None:
             self._weather_next.refresh_data(data)
+        if self._weather_chart is not None:
             self._weather_chart.refresh_data(data.get("hourlyDetails"))
-            self._check_probability_warning(data)
-            self.set_loading(False)
+        self._check_probability_warning(data)
+        self.set_loading(False)
 
     def _check_probability_warning(self, data):
         prob_keys = [
@@ -446,7 +452,7 @@ class Weather(Static):
                     f"{icon} {next_max:.0f}% next {PROB_WARNING_LOOKAHEAD_HOURS}h"
                 )
                 level = max(level, prob_level)
-        self.app.warning_manager.update(
+        self.app.warning_manager.update(  # pyright: ignore[reportAttributeAccessIssue]
             "weather", messages, level=level if level > 0 else 3,
         )
 
@@ -471,5 +477,8 @@ class Weather(Static):
         self._weather_next = self.app.query_one("#weather_next", WeatherNext)
         self._weather_chart = self.app.query_one("#weather_chart", WeatherChart)
 
-        self.set_timer(1, self.refresh_data)
-        self.set_interval(config["weatherRefreshInterval"], self.refresh_data)
+        self.set_interval(5, self._check_cache)
+
+    def refresh_data(self):
+        self._cache_mtime = 0
+        self._check_cache()

@@ -43,9 +43,6 @@ class HomeApp(App):
     def action_toggle_dark_mode(self):
         self.dark = not self.dark
 
-    def action_quit(self):
-        self.exit()
-    
     def action_refresh(self):
         self.query_one("#message", TrainStationMessage).refresh_message()
         self.query_one("#schedule", TrainSchedule).refresh_schedule()

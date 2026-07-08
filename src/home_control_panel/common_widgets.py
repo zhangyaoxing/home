@@ -9,7 +9,10 @@ class ScrollingLabel(Label):
 
     def scroll(self):
         margin = config["message"]["margin"]
-        content_w = self.parent.content_size.width
+        parent = self.parent
+        if parent is None:
+            return
+        content_w = parent.size.width  # pyright: ignore[reportAttributeAccessIssue]
         text_w = self.size.width
         if text_w <= content_w:
             return
