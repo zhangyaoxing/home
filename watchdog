@@ -2,18 +2,26 @@
 """Watchdog: restarts the app when git changes are detected."""
 
 import json
+import errno
 import os
 import signal
+import shutil
+import socket
 import subprocess
 import sys
 import time
 
 CHECK_INTERVAL = 3
 RETRY_DELAY = 30
+SERVE_PORT = 8093
+LOG_DIR = "logs"
+STARTED_PROCESSES = []
 
 with open("src/home_control_panel/config.json") as f:
     _config = json.load(f)
-SERVE_HOST = _config["serveHost"].removeprefix("https://").removeprefix("http://")
+SERVE_URL = _config["serveHost"]
+if not SERVE_URL.startswith(("http://", "https://")):
+    SERVE_URL = f"https://{SERVE_URL}"
 
 
 def has_changes():
@@ -33,33 +41,90 @@ def _remote_has_incoming():
 
 
 def start_serve():
-    """Fork and exec textual serve. Child inherits terminal control from parent."""
-    pid = os.fork()
-    if pid == 0:
-        os.execvpe(
-            sys.executable,
+    """Start textual serve in the background and return the process handle."""
+    textual = shutil.which("textual")
+    if textual is None:
+        raise RuntimeError(
+            "Could not find the 'textual' command. Install dev dependencies with "
+            "'python -m pip install -e \".[dev]\"'."
+        )
+    if port_is_in_use("0.0.0.0", SERVE_PORT):
+        raise RuntimeError(
+            f"Port {SERVE_PORT} is already in use. Stop the existing textual serve "
+            "process before starting watchdog."
+        )
+    log = open_log("textual-serve.log")
+    return track_process(
+        subprocess.Popen(
             [
-                sys.executable,
-                "-m", "textual",
+                textual,
                 "serve",
-                "-h", SERVE_HOST,
+                "-h",
+                "0.0.0.0",
+                "--port",
+                str(SERVE_PORT),
+                "--url",
+                SERVE_URL,
                 "src/home_control_panel/app.py",
             ],
-            {**os.environ, "PYTHONPATH": "src"},
-        )
-    return pid
+            env={**os.environ, "PYTHONPATH": "src"},
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        ),
+        "Serve",
+        process_group=True,
+    )
 
 
 def start_api_service():
-    """Fork and exec the API service."""
-    pid = os.fork()
-    if pid == 0:
-        os.execvpe(
-            sys.executable,
+    """Start the API service in the background and return the process handle."""
+    log = open_log("api-service.log")
+    return track_process(
+        subprocess.Popen(
             [sys.executable, "-m", "home_control_panel.api_service"],
-            {**os.environ, "PYTHONPATH": "src"},
-        )
-    return pid
+            env={**os.environ, "PYTHONPATH": "src"},
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        ),
+        "API service",
+        process_group=True,
+    )
+
+
+def start_app():
+    """Start the local Textual app attached to the current terminal."""
+    return track_process(
+        subprocess.Popen(
+            [sys.executable, "-m", "home_control_panel.app"],
+            env={**os.environ, "PYTHONPATH": "src"},
+        ),
+        "App",
+        process_group=False,
+    )
+
+
+def track_process(process, label, process_group):
+    STARTED_PROCESSES.append((process, label, process_group))
+    return process
+
+
+def open_log(filename):
+    os.makedirs(LOG_DIR, exist_ok=True)
+    return open(os.path.join(LOG_DIR, filename), "a", buffering=1)
+
+
+def port_is_in_use(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind((host, port))
+        except OSError as exc:
+            if exc.errno == errno.EADDRINUSE:
+                return True
+            raise
+        return False
 
 
 def pull_changes():
@@ -115,38 +180,52 @@ def install_dependencies():
     return True
 
 
-def app_exited(pid):
-    """Check whether the given child has exited. Returns exit_code or None."""
-    try:
-        wpid, status = os.waitpid(pid, os.WNOHANG)
-    except ChildProcessError:
-        return -1
-    if wpid == 0:
-        return None
-    return os.waitstatus_to_exitcode(status)
+def process_exited(process):
+    """Check whether the given process has exited. Returns exit_code or None."""
+    return process.poll()
 
 
-def kill_process(pid, label):
+def kill_process(process, label, process_group=True):
+    if process.poll() is not None:
+        return
     try:
-        os.kill(pid, signal.SIGTERM)
+        if process_group:
+            os.killpg(process.pid, signal.SIGTERM)
+        else:
+            process.terminate()
     except ProcessLookupError:
         return
     for _ in range(50):  # 5 seconds
-        if app_exited(pid) is not None:
+        if process.poll() is not None:
             return
         time.sleep(0.1)
     try:
-        os.kill(pid, signal.SIGKILL)
-        os.waitpid(pid, 0)
-    except (ProcessLookupError, ChildProcessError):
+        if process_group:
+            os.killpg(process.pid, signal.SIGKILL)
+        else:
+            process.kill()
+        process.wait()
+    except ProcessLookupError:
         pass
 
 
-def kill_all(app_pid, api_pid):
-    if api_pid is not None:
-        kill_process(api_pid, "API service")
-    if app_pid is not None:
-        kill_process(app_pid, "App")
+def kill_all(serve_process, api_process, app_process):
+    if app_process is not None:
+        kill_process(app_process, "App", process_group=False)
+    if api_process is not None:
+        kill_process(api_process, "API service")
+    if serve_process is not None:
+        kill_process(serve_process, "Serve")
+
+
+def cleanup_started_processes():
+    for process, label, process_group in reversed(STARTED_PROCESSES):
+        kill_process(process, label, process_group=process_group)
+
+
+def exit_from_signal(signum, _frame):
+    print(f"{timestamp()} Watchdog received signal {signum}. Stopping.")
+    raise SystemExit(128 + signum)
 
 
 def timestamp():
@@ -160,51 +239,48 @@ def update_dependencies_if_needed(pyproject_changed):
 
 
 def run_loop():
-    app_pid = start_serve()
-    api_pid = start_api_service()
-    print(f"{timestamp()} Serve started (PID: {app_pid}), API service (PID: {api_pid}).")
+    serve_process = start_serve()
+    api_process = start_api_service()
+    app_process = start_app()
+    print(
+        f"{timestamp()} Serve started (PID: {serve_process.pid}), "
+        f"API service (PID: {api_process.pid}), "
+        f"App (PID: {app_process.pid})."
+    )
 
     while True:
         time.sleep(CHECK_INTERVAL)
 
-        exit_code = app_exited(app_pid)
+        exit_code = process_exited(serve_process)
         if exit_code is not None:
-            if exit_code == 0:
-                print(f"{timestamp()} Serve exited normally. Stopping.")
-                kill_all(app_pid, api_pid)
-                return
-            print(f"{timestamp()} Serve crashed (exit {exit_code}).")
-
-            if not has_changes():
-                print(f"{timestamp()} Waiting for changes...")
-                while not has_changes():
-                    time.sleep(CHECK_INTERVAL)
-
-            print(f"{timestamp()} Changes detected, pulling...")
-            pulled, pyproject_changed = pull_changes()
-            if pulled:
-                if update_dependencies_if_needed(pyproject_changed):
-                    kill_all(app_pid, api_pid)
-                    app_pid, api_pid = _restart()
-                else:
-                    print(f"{timestamp()} Skipping restart due to install failure.")
-            else:
-                print(f"{timestamp()} Skipping restart due to pull failure.")
+            print(f"{timestamp()} Serve exited (exit {exit_code}), restarting...")
+            kill_all(serve_process, api_process, app_process)
+            serve_process, api_process, app_process = _restart()
             continue
 
-        api_exit = app_exited(api_pid)
+        api_exit = process_exited(api_process)
         if api_exit is not None:
             print(f"{timestamp()} API service crashed (exit {api_exit}), restarting...")
-            api_pid = start_api_service()
-            print(f"{timestamp()} API service restarted (PID: {api_pid}).")
+            api_process = start_api_service()
+            print(f"{timestamp()} API service restarted (PID: {api_process.pid}).")
+
+        app_exit = process_exited(app_process)
+        if app_exit is not None:
+            if app_exit == 0:
+                print(f"{timestamp()} App exited normally. Stopping watchdog.")
+                kill_all(serve_process, api_process, app_process)
+                return
+            print(f"{timestamp()} App crashed (exit {app_exit}), restarting...")
+            app_process = start_app()
+            print(f"{timestamp()} App restarted (PID: {app_process.pid}).")
 
         if has_changes():
             print(f"{timestamp()} Changes detected, pulling...")
             pulled, pyproject_changed = pull_changes()
             if pulled:
                 if update_dependencies_if_needed(pyproject_changed):
-                    kill_all(app_pid, api_pid)
-                    app_pid, api_pid = _restart()
+                    kill_all(serve_process, api_process, app_process)
+                    serve_process, api_process, app_process = _restart()
                 else:
                     print(f"{timestamp()} Skipping restart due to install failure.")
 
@@ -212,17 +288,29 @@ def run_loop():
 def _restart():
     print(f"{timestamp()} Restarting...")
     while True:
-        app_pid = start_serve()
-        api_pid = start_api_service()
+        serve_process = start_serve()
+        api_process = start_api_service()
+        app_process = start_app()
         time.sleep(2)
-        app_ok = app_exited(app_pid) is None
-        api_ok = app_exited(api_pid) is None
-        if app_ok and api_ok:
-            print(f"{timestamp()} Serve started (PID: {app_pid}), API service (PID: {api_pid}).")
-            return app_pid, api_pid
+        serve_ok = process_exited(serve_process) is None
+        api_ok = process_exited(api_process) is None
+        app_ok = process_exited(app_process) is None
+        if serve_ok and api_ok and app_ok:
+            print(
+                f"{timestamp()} Serve started (PID: {serve_process.pid}), "
+                f"API service (PID: {api_process.pid}), "
+                f"App (PID: {app_process.pid})."
+            )
+            return serve_process, api_process, app_process
+        kill_all(serve_process, api_process, app_process)
         print(f"{timestamp()} Start failed, retrying in {RETRY_DELAY}s...")
         time.sleep(RETRY_DELAY)
 
 
 if __name__ == "__main__":
-    run_loop()
+    signal.signal(signal.SIGINT, exit_from_signal)
+    signal.signal(signal.SIGTERM, exit_from_signal)
+    try:
+        run_loop()
+    finally:
+        cleanup_started_processes()
