@@ -46,15 +46,18 @@ Screen {
 
 .schedule-route {
     width: 1fr;
+    color: white;
 }
 
 .schedule-track {
     width: 6;
+    color: white;
 }
 
 .schedule-time {
     width: 8;
     text-align: right;
+    color: white;
 }
 
 .schedule-message {
@@ -102,9 +105,25 @@ Screen {
     width: auto;
     padding-left: 1;
     text-align: right;
+    color: white;
 }
 
 .sensor-exceeded {
+    color: red;
+    text-style: bold;
+}
+
+.sensor-exceeded-1 {
+    color: green;
+    text-style: bold;
+}
+
+.sensor-exceeded-2 {
+    color: yellow;
+    text-style: bold;
+}
+
+.sensor-exceeded-3 {
     color: red;
     text-style: bold;
 }

@@ -5,7 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Static
 
-from home_control_panel.libs.cache import cache_mtime, read_cache
+from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class SensorRow(Horizontal):
             )
             yield Static(
                 f"[bold {color}]{escape(value)}[/]",
-                classes="sensor-value sensor-exceeded",
+                classes=f"sensor-value sensor-exceeded-{self.level}",
             )
         else:
             yield Static(
@@ -150,11 +150,13 @@ class Sensors(Static):
             self._sensor_signature = sensor_signature
 
         self.set_loading(False)
+        self.border_subtitle = f"[dim]Updated {format_cache_time(cached)}[/]"
         self._apply_humidity_warning(data, low_sensors, plant_low)
 
     def on_mount(self):
         self.border_title = "In-House Sensors"
         self.set_loading(True)
+        self._check_cache()
         self.set_interval(5, self._check_cache)
 
     def refresh_data(self):

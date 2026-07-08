@@ -34,3 +34,13 @@ def cache_mtime(name):
         return path.stat().st_mtime
     except FileNotFoundError:
         return 0
+
+
+def format_cache_time(cached):
+    if cached is None:
+        return ""
+    try:
+        ts = cached["timestamp"]
+        return ts[11:16] if "T" in ts else ts[:5]
+    except (KeyError, IndexError):
+        return ""

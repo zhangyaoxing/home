@@ -8,7 +8,7 @@ from textual.containers import Horizontal
 from textual.widgets import Rule, Static
 
 from home_control_panel.common_widgets import ScrollingLabel
-from home_control_panel.libs.cache import cache_mtime, read_cache
+from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -68,10 +68,12 @@ class TrainStationMessage(Static):
             self.mount(Rule())
 
         self.set_loading(False)
+        self.border_subtitle = f"[dim]Updated {format_cache_time(cached)}[/]"
 
     def on_mount(self):
         self.border_title = "Station Notices"
         self.set_loading(True)
+        self._check_cache()
         self.set_interval(5, self._check_cache)
 
     def refresh_message(self):
@@ -204,7 +206,8 @@ class TrainSchedule(Static):
 
         data = cached["data"]
         self.stations = data.get("station_names", {})
-        self.border_subtitle = self.stations.get(config["myStationCode"], "")
+        station = self.stations.get(config["myStationCode"], "")
+        self.border_subtitle = f"{station}  [dim]Updated {format_cache_time(cached)}[/]"
 
         schedules = data.get("announcements", [])
         now = datetime.now(tz=pytz.UTC)
@@ -230,6 +233,7 @@ class TrainSchedule(Static):
     def on_mount(self):
         self.border_title = "Train Schedules"
         self.set_loading(True)
+        self._check_cache()
         self.set_interval(5, self._check_cache)
 
     def refresh_schedule(self):

@@ -24,11 +24,14 @@ class HomeApp(App):
     ]
     CSS_PATH = "assets/style.css"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.warning_manager = WarningManager(
+            self, config["humidityWarningInterval"],
+        )
+
     def on_mount(self):
         self.title = config["title"]
-        self.warning_manager = WarningManager(
-            self, config["humidityWarningInterval"]
-        )
 
     def compose(self):
         # yield Header(show_clock=True)

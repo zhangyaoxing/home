@@ -5,7 +5,7 @@ from rich.text import Text
 from textual.widgets import DataTable, Static
 from textual_hires_canvas import Canvas, HiResMode, TextAlign
 
-from home_control_panel.libs.cache import cache_mtime, read_cache
+from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
 from home_control_panel.libs.utils import load_config
 
 logger = logging.getLogger(__name__)
@@ -322,7 +322,7 @@ class WeatherChart(Static):
     _hourly_days: list[dict] | None = None
 
     def on_mount(self):
-        self.border_title = "Weather Details"
+        self.border_title = "Weather Charts"
         self._metrics = [
             WeatherMetricChart(
                 [
@@ -358,9 +358,6 @@ class WeatherChart(Static):
                 metric.refresh_data(None)
             return
         combined = self._merge_days(self._hourly_days)
-        first_date = self._hourly_days[0].get("date", "")
-        last_date = self._hourly_days[-1].get("date", "")
-        self.border_title = f"Weather Details {first_date} – {last_date}"
         self.border_subtitle = ""
         for metric in self._metrics:
             metric.refresh_data(combined)
@@ -426,10 +423,13 @@ class Weather(Static):
 
         data = cached["data"]
         self._last_error = False
+        ts = f"[dim]Updated {format_cache_time(cached)}[/]"
         if self._weather_next is not None:
             self._weather_next.refresh_data(data)
+            self._weather_next.border_subtitle = ts
         if self._weather_chart is not None:
             self._weather_chart.refresh_data(data.get("hourlyDetails"))
+            self._weather_chart.border_subtitle = ts
         self._check_probability_warning(data)
         self.set_loading(False)
 
@@ -477,6 +477,7 @@ class Weather(Static):
         self._weather_next = self.app.query_one("#weather_next", WeatherNext)
         self._weather_chart = self.app.query_one("#weather_chart", WeatherChart)
 
+        self._check_cache()
         self.set_interval(5, self._check_cache)
 
     def refresh_data(self):
