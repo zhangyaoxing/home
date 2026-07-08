@@ -39,6 +39,7 @@ class TrainStationMessage(Static):
         super().__init__(*args, **kwargs)
         self.last_refresh = datetime.min
         self._seen_messages = set()
+        self._summaries = {}
 
     def compose(self) -> ComposeResult:
         yield Static()
@@ -59,18 +60,19 @@ class TrainStationMessage(Static):
             return
 
         messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
-        summaries = {}
+        new_summaries = {}
         for message in messages:
             text = _normalize_message(message.get("FreeText", ""))
             if not text:
                 continue
             digest = hashlib.md5(text.encode()).hexdigest()
             if digest not in self._seen_messages:
-                summaries[digest] = summarize_notice(text)
+                new_summaries[digest] = summarize_notice(text)
 
-        self.app.call_from_thread(self._apply_messages, messages_json, summaries)
+        self._summaries.update(new_summaries)
+        self.app.call_from_thread(self._apply_messages, messages_json)
 
-    def _apply_messages(self, messages_json, summaries):
+    def _apply_messages(self, messages_json):
         messages = messages_json["RESPONSE"]["RESULT"][0]["TrainStationMessage"]
         messages = sorted(
             messages,
@@ -84,7 +86,7 @@ class TrainStationMessage(Static):
             if text:
                 digest = hashlib.md5(text.encode()).hexdigest()
                 self._seen_messages.add(digest)
-                display_text = summaries.get(digest, text)
+                display_text = self._summaries.get(digest, text)
             else:
                 display_text = text
             status_class = "lag" if message.get("Status") == "Lag" else "normal"

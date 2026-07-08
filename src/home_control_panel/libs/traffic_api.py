@@ -105,6 +105,7 @@ def api_train_announcement():
 def summarize_notice(text):
     key = config.get("dsKey")
     if not key:
+        logger.warning("dsKey not configured — skipping DeepSeek summarization")
         return text
     try:
         result = requests.post(
