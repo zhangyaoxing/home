@@ -3,6 +3,7 @@
   "weatherLat": 59.346616,
   "weatherLon": 18.034304,
   "haApiUrl": "http://homeassistant.local:8123",
+  "serveHost": "monitor.yaoxing.online",
   "myStationCode": "Sod",
   "logLevel": "INFO",
   "message": {
