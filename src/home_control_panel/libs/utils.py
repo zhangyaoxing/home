@@ -48,11 +48,13 @@ def load_config():
 
 levels = logging._nameToLevel
 log_level = levels[config["logLevel"]]
+log_dir = Path(get_script_path()).parents[1] / "logs"
+log_dir.mkdir(exist_ok=True)
 logging.basicConfig(
     level=log_level,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('home_app.log'),
+        logging.FileHandler(log_dir / "home_app.log"),
     ]
 )
 logger = logging.getLogger(__name__)
