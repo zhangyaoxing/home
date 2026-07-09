@@ -5,7 +5,13 @@ class ScrollingLabel(Label):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._position = config["message"]["margin"]
-        self._last_offset = self._position
+        self._last_offset = 0
+
+    def reset_scroll(self):
+        self._position = config["message"]["margin"]
+        if self._last_offset != 0:
+            self.styles.offset = 0, 0
+            self._last_offset = 0
 
     def scroll(self):
         margin = config["message"]["margin"]
@@ -29,3 +35,7 @@ class ScrollingLabel(Label):
 
     def on_mount(self):
         self.set_interval(config["message"]["scrollSpeed"], self.scroll)
+
+    def on_resize(self):
+        self.reset_scroll()
+        self.scroll()
