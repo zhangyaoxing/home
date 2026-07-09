@@ -6,12 +6,13 @@ class ScrollingLabel(Label):
         super().__init__(*args, **kwargs)
         self._position = config["message"]["margin"]
         self._last_offset = 0
+        self._last_parent_width = None
+        self._last_text_width = None
 
     def reset_scroll(self):
         self._position = config["message"]["margin"]
-        if self._last_offset != 0:
-            self.styles.offset = 0, 0
-            self._last_offset = 0
+        self.styles.offset = 0, 0
+        self._last_offset = 0
 
     def scroll(self):
         margin = config["message"]["margin"]
@@ -19,8 +20,13 @@ class ScrollingLabel(Label):
         if parent is None:
             return
         content_w = parent.size.width  # pyright: ignore[reportAttributeAccessIssue]
-        text_w = self.size.width
+        text_w = self.content_size.width or self.size.width
+        if (content_w, text_w) != (self._last_parent_width, self._last_text_width):
+            self.reset_scroll()
+            self._last_parent_width = content_w
+            self._last_text_width = text_w
         if text_w <= content_w:
+            self.reset_scroll()
             return
         self._position -= 1
         if self._position < 0 and text_w + self._position >= content_w:
