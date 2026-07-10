@@ -21,6 +21,7 @@ from home_control_panel.libs.traffic_api import (  # noqa: E402
     api_train_stations,
     is_freq_throttled,
     summarize_notice,
+    translate_texts,
 )
 from home_control_panel.libs.utils import config  # noqa: E402
 from home_control_panel.libs.weather_api import api_weather  # noqa: E402
@@ -34,6 +35,7 @@ def _load_state():
     state = read_cache(_STATE_FILE) or {}
     state.setdefault("seen_digests", [])
     state.setdefault("summaries", {})
+    state.setdefault("translations", {})
     state.setdefault("station_names", {})
     state.setdefault("stations_updated", None)
     return state
@@ -43,6 +45,7 @@ def _save_state(state):
     slim = {
         "seen_digests": state.get("seen_digests", []),
         "summaries": state.get("summaries", {}),
+        "translations": state.get("translations", {}),
         "station_names": state.get("station_names", {}),
         "stations_updated": state.get("stations_updated"),
     }
@@ -51,6 +54,14 @@ def _save_state(state):
 
 def _normalize_message(text):
     return " ".join(text.split())
+
+
+def _as_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
 
 
 def _fetch_stations(state):
@@ -74,21 +85,45 @@ def _fetch_schedule(state, last_train_call):
     if error or not data:
         logger.warning("Failed to fetch train schedule: %s", error)
         return last_train_call
+
+    announcements = data["RESPONSE"]["RESULT"][0].get("TrainAnnouncement", [])
+    old_translations = state["translations"]
+
+    # Collect all untranslated Deviation and OtherInformation texts.
+    new_texts = []
+    for a in announcements:
+        for field in ("Deviation", "OtherInformation"):
+            new_texts.extend(_as_list(a.get(field)))
+
+    new_texts = [_normalize_message(t) for t in new_texts if t]
+    untranslated = [t for t in new_texts if t not in old_translations]
+
+    if untranslated:
+        translated = translate_texts(untranslated)
+        if translated is not None:
+            old_translations.update(translated)
+            logger.info("Translated %d new texts", len(translated))
+
+    # Attach translation maps to each announcement.
+    for a in announcements:
+        for field in ("Deviation", "OtherInformation"):
+            raw = _as_list(a.get(field))
+            raw = [_normalize_message(t) for t in raw if t]
+            a[f"{field}_tr"] = {t: old_translations.get(t, t) for t in raw}
+
     write_cache(
         "train_schedule.json",
         {
             "timestamp": now.isoformat(),
             "data": {
-                "announcements": data["RESPONSE"]["RESULT"][0].get(
-                    "TrainAnnouncement", []
-                ),
+                "announcements": announcements,
                 "station_names": state.get("station_names", {}),
             },
         },
     )
     logger.info(
         "Train schedule updated: %d announcements",
-        len(data["RESPONSE"]["RESULT"][0].get("TrainAnnouncement", [])),
+        len(announcements),
     )
     return now
 
@@ -221,6 +256,7 @@ def main():
             if result != last_sched_call:
                 last_sched_call = result
             last_schedule = now
+            _save_state(state)
 
         time.sleep(1)
 

@@ -127,52 +127,51 @@ class ScheduleEntry(Static):
     def compose(self) -> ComposeResult:
         yield ScheduleLine(self.schedule, self.stations)
 
-        seen = set()
-        messages = []
         for field, style in (
             ("Deviation", "bold yellow"),
             ("OtherInformation", "gray"),
         ):
-            for message in _as_list(self.schedule.get(field)):
-                normalized = _normalize_message(message)
-                if normalized and normalized not in seen:
-                    seen.add(normalized)
-                    messages.append((normalized, style))
+            tr_map = self.schedule.get(f"{field}_tr", {})
+            messages = []
+            for raw_msg in _as_list(self.schedule.get(field)):
+                normalized = _normalize_message(raw_msg)
+                if not normalized:
+                    continue
+                display = tr_map.get(normalized, normalized)
+                messages.append((display, style))
 
-        short_train = next(
-            (
-                message
-                for message in messages
-                if message[0].casefold() == "kort tåg"
-            ),
-            None,
-        )
-        door_range = next(
-            (
-                message
-                for message in messages
-                if message[0].casefold() in {"dörr 2-13", "dörr 16-27"}
-            ),
-            None,
-        )
+            if not messages:
+                continue
 
-        grouped_messages = {short_train, door_range} - {None}
-        if short_train is not None and door_range is not None:
-            yield Static(
-                self._format_messages((short_train, door_range)),
-                classes="schedule-message schedule-message-pair",
-            )
-        else:
-            grouped_messages.clear()
+            if field == "Deviation":
+                short_train = next(
+                    (m for m in messages if m[0].casefold() == "kort tåg"),
+                    None,
+                )
+                door_range = next(
+                    (m for m in messages if m[0].casefold() in {"dörr 2-13", "dörr 16-27"}),
+                    None,
+                )
+                grouped = {short_train, door_range} - {None}
+                if short_train is not None and door_range is not None:
+                    yield Static(
+                        self._format_messages((short_train, door_range)),
+                        classes="schedule-message schedule-message-pair",
+                    )
+                else:
+                    grouped.clear()
 
-        remaining_messages = [
-            message for message in messages if message not in grouped_messages
-        ]
-        if remaining_messages:
-            yield ScrollingLabel(
-                self._format_messages(remaining_messages),
-                classes="schedule-message schedule-message-scroll",
-            )
+                remaining = [m for m in messages if m not in grouped]
+                if remaining:
+                    yield ScrollingLabel(
+                        self._format_messages(remaining),
+                        classes="schedule-message schedule-message-scroll",
+                    )
+            else:
+                yield ScrollingLabel(
+                    self._format_messages(messages),
+                    classes="schedule-message schedule-message-scroll",
+                )
 
     @staticmethod
     def _format_messages(messages):

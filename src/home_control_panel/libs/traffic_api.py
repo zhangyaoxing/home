@@ -137,3 +137,40 @@ def summarize_notice(text):
     except Exception:
         logger.warning("DeepSeek summarization failed", exc_info=True)
         return text
+
+
+def translate_texts(texts):
+    """Translate a list of Swedish texts to English via Google Cloud Translation API.
+
+    Returns a dict mapping each original text to its translation, or None on failure.
+    """
+    key = config.get("gcpKey")
+    if not key:
+        logger.warning("gcpKey not configured — skipping Google Translate")
+        return None
+
+    unique = list(dict.fromkeys(t for t in texts if t))
+    if not unique:
+        return {}
+
+    try:
+        result = requests.post(
+            "https://translation.googleapis.com/language/translate/v2",
+            params={"key": key},
+            json={
+                "q": unique,
+                "target": "en",
+                "source": "sv",
+                "format": "text",
+            },
+            timeout=15,
+        )
+        result.raise_for_status()
+        translations = result.json()["data"]["translations"]
+        return {
+            src: t["translatedText"]
+            for src, t in zip(unique, translations)
+        }
+    except Exception:
+        logger.warning("Google Translate failed", exc_info=True)
+        return None
