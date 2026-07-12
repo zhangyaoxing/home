@@ -19,6 +19,9 @@ from home_control_panel.libs.utils import config
 logger = logging.getLogger(__name__)
 TZ = pytz.timezone(config["timezone"])
 
+# Build line number → colour map
+_LINE_COLORS = config["sl"].get("metroLineColors", {})
+
 
 class MetroLine(Horizontal):
     def __init__(self, entry):
@@ -45,11 +48,12 @@ class MetroLine(Horizontal):
         else:
             mins = ""
 
+        colour = _LINE_COLORS.get(line, "#FFFFFF")
         if cancelled:
-            route = f"[strike bold blue]{line}[/]  [strike green]{dest}[/]"
+            route = f"[strike bold {colour}]{line}[/] → [strike green]{dest}[/]"
             time_display = f"[strike]{mins}[/]"
         else:
-            route = f"[bold blue]{line}[/]  [green]{dest}[/]"
+            route = f"[bold {colour}]{line}[/] → [green]{dest}[/]"
             time_display = mins
 
         self.query_one(".schedule-route", Static).update(route)

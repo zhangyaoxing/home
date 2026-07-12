@@ -98,17 +98,15 @@ class ScheduleLine(Horizontal):
         advertised_time = datetime.fromisoformat(row["AdvertisedTimeAtLocation"])
         now = datetime.now(tz=pytz.UTC)
         track = row.get("TrackAtLocation", "")
-        from_station = "/".join(
-            self.stations.get(location, location)
-            for location in row.get("FromLocation", [])
-        )
-
-        delta = (advertised_time - now).total_seconds()
         to_station = "/".join(
             f"[bold][green]{self.stations.get(location, location)}[/green][/bold]"
             for location in row.get("ToLocation", [])
         )
-        route = f"{from_station} → {to_station}"
+        route = f"→ {to_station}"
+        line_no = row.get("Line", "")
+        if line_no:
+            route = f"{line_no}  {route}"
+        delta = (advertised_time - now).total_seconds()
         departure = f"{int(delta / 60)} min"
 
         self.query_one(".schedule-route", Static).update(route)

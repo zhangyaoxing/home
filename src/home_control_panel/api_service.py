@@ -127,6 +127,12 @@ def _fetch_schedule(state, last_train_call):
             raw = _as_list(a.get(field))
             raw = [_normalize_message(t) for t in raw if t]
             a[f"{field}_tr"] = {t: old_translations.get(t, t) for t in raw}
+        # Extract line number from ProductInformation
+        products = a.get("ProductInformation", [])
+        for item in reversed(products):
+            if isinstance(item, str) and item.strip().isdigit():
+                a["Line"] = item
+                break
 
     write_cache(
         "train_schedule.json",
