@@ -6,12 +6,15 @@ Start alongside the TUI app. Each widget watches its cache file for changes.
 
 import hashlib
 import logging
+import os
 import time
 from datetime import datetime
 
 from dotenv import load_dotenv
 
 load_dotenv()  # noqa: E402
+
+os.environ["LOG_FILE"] = "api-service.log"
 
 from home_control_panel.libs.cache import read_cache, write_cache  # noqa: E402
 from home_control_panel.libs.ha_api import api_ha  # noqa: E402
