@@ -371,27 +371,25 @@ def main():
             last_schedule = now
             _save_state(state)
 
-        metro_triggered = (CACHE_DIR / "_trigger_metro").exists()
-        if (now - last_metro).total_seconds() >= metro_interval or metro_triggered:
-            if metro_triggered:
-                last_metro_call = datetime.min  # bypass throttle
+        if (CACHE_DIR / "_trigger_metro").exists():
+            _clear_trigger("_trigger_metro")
+            last_metro = datetime.min
+        if (now - last_metro).total_seconds() >= metro_interval:
             result = _fetch_metro(state, last_metro_call)
             if result != last_metro_call:
                 last_metro_call = result
             last_metro = now
             _save_state(state)
-            _clear_trigger("_trigger_metro")
 
-        bus_triggered = (CACHE_DIR / "_trigger_bus").exists()
-        if (now - last_bus).total_seconds() >= bus_interval or bus_triggered:
-            if bus_triggered:
-                last_bus_call = datetime.min  # bypass throttle
+        if (CACHE_DIR / "_trigger_bus").exists():
+            _clear_trigger("_trigger_bus")
+            last_bus = datetime.min
+        if (now - last_bus).total_seconds() >= bus_interval:
             result = _fetch_bus(state, last_bus_call)
             if result != last_bus_call:
                 last_bus_call = result
             last_bus = now
             _save_state(state)
-            _clear_trigger("_trigger_bus")
 
         time.sleep(1)
 
