@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 
 import pytz
@@ -13,6 +14,7 @@ from home_control_panel.libs.cache import (
     cache_mtime,
     format_cache_time,
     read_cache,
+    touch_trigger,
 )
 from home_control_panel.libs.utils import config
 
@@ -89,6 +91,12 @@ class TrainStationMessage(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_message()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        touch_trigger("_trigger_train_messages")
+        self.refresh_message()
 
 
 class ScheduleLine(Horizontal):
@@ -250,6 +258,12 @@ class TrainSchedule(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_schedule()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        touch_trigger("_trigger_train_schedule")
+        self.refresh_schedule()
 
 
 class Train(Static):

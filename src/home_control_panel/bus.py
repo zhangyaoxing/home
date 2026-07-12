@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 
 import pytz
@@ -154,3 +155,9 @@ class BusSchedule(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_bus()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        touch_trigger("_trigger_bus")
+        self.refresh_bus()

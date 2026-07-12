@@ -363,12 +363,20 @@ def main():
             _save_state(state)
             last_stations_check = now
 
+        if (CACHE_DIR / "_trigger_train_messages").exists():
+            _clear_trigger("_trigger_train_messages")
+            last_messages = datetime.min
+
         if (now - last_messages).total_seconds() >= message_interval:
             result = _fetch_messages(state, last_msg_call)
             if result != last_msg_call:
                 last_msg_call = result
             last_messages = now
             _save_state(state)
+
+        if (CACHE_DIR / "_trigger_train_schedule").exists():
+            _clear_trigger("_trigger_train_schedule")
+            last_schedule = datetime.min
 
         if (now - last_schedule).total_seconds() >= schedule_interval:
             result = _fetch_schedule(state, last_sched_call)

@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 
 import pytz
@@ -159,3 +160,9 @@ class MetroSchedule(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_metro()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        touch_trigger("_trigger_metro")
+        self.refresh_metro()
