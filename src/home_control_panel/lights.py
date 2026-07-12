@@ -33,6 +33,7 @@ class LightCheckbox(Checkbox):
             *args,
             **kwargs,
         )
+        self.can_focus = False
         self.entity_id = entity_id
 
     def watch_value(self, value: bool) -> None:
@@ -55,8 +56,6 @@ class LightCheckbox(Checkbox):
         if error:
             logger.warning("Failed to toggle %s: %s", self.entity_id, error)
             self.app.call_from_thread(setattr, self, "value", not turn_on)
-        else:
-            self.app.call_from_thread(self.post_message, RefreshRequest())
 
 
 class RoomSection(Vertical):

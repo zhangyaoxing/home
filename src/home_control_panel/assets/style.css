@@ -168,21 +168,21 @@ SceneButton {
 }
 
 LightCheckbox.light-on {
-    background: white;
-    color: black;
+    background: #4a3a00;
+    color: #FFD700;
 }
 
 LightCheckbox.light-on .toggle--label {
-    color: black;
+    color: #FFD700;
 }
 
 LightCheckbox.light-off {
-    background: black;
-    color: white;
+    background: #1a1a1a;
+    color: #666666;
 }
 
 LightCheckbox.light-off .toggle--label {
-    color: white;
+    color: #666666;
 }
 
 Checkbox {
