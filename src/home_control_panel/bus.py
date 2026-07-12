@@ -46,10 +46,10 @@ class BusLine(Horizontal):
             mins = ""
 
         if cancelled:
-            route = f"[strike bold blue]{line}[/]  [strike green]{dest}[/]"
+            route = f"[strike bold white]{line}[/]  [strike green]{dest}[/]"
             time_display = f"[strike]{mins}[/]"
         else:
-            route = f"[bold blue]{line}[/]  [green]{dest}[/]"
+            route = f"[bold white]{line}[/]  [green]{dest}[/]"
             time_display = mins
 
         self.query_one(".schedule-route", Static).update(route)
