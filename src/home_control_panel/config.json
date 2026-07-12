@@ -122,6 +122,13 @@
         "switch.smart_plug_in_unit_2",
         "light.table_lamp_switch"
       ]
-    }
+    },
+    "scenes": [
+      "scene.cinema",
+      "scene.evening",
+      "scene.day",
+      "scene.night",
+      "scene.good_night"
+    ]
   }
 }

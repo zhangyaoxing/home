@@ -154,6 +154,20 @@ LightCheckbox {
     color: white;
 }
 
+SceneSection {
+    width: 1fr;
+    height: 100%;
+    border: solid #404040;
+    border-title-color: cyan;
+    border-title-style: bold;
+    padding: 0 1;
+}
+
+SceneButton {
+    height: 1;
+    color: white;
+}
+
 LightCheckbox.light-on {
     background: white;
     color: black;

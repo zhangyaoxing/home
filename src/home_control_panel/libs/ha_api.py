@@ -77,14 +77,15 @@ def api_ha():
 
 
 def api_ha_lights():
-    """Fetch light and switch states for configured areas from Home Assistant.
+    """Fetch light, switch, and scene states for configured areas from Home Assistant.
 
-    Reads area→entity mappings from config.json and looks up current state
-    for each entity via /api/states.
+    Reads area→entity mappings and scene list from config.json and looks up
+    current state for each entity via /api/states.
     """
     areas_config = config["homeassistant"].get("areas", {})
-    if not areas_config:
-        return None, []
+    scenes_config = config["homeassistant"].get("scenes", [])
+    if not areas_config and not scenes_config:
+        return None, {"rooms": [], "scenes": []}
 
     headers = {
         "Authorization": f'Bearer {config["haKey"]}',
@@ -135,7 +136,15 @@ def api_ha_lights():
         if lights:
             rooms.append({"area": area_name, "lights": lights})
 
-    return None, rooms
+    scenes = []
+    for entity_id in scenes_config:
+        state_json = states_by_id.get(entity_id)
+        name = entity_id
+        if state_json:
+            name = state_json["attributes"].get("friendly_name", entity_id)
+        scenes.append({"entity_id": entity_id, "name": name})
+
+    return None, {"rooms": rooms, "scenes": scenes}
 
 
 def api_ha_toggle_light(entity_id):
@@ -163,4 +172,33 @@ def api_ha_toggle_light(entity_id):
         return None
     except requests.RequestException as error:
         logger.error("Exception when toggling %s: %s", entity_id, error)
+        return error
+
+
+def api_ha_activate_scene(entity_id):
+    """Activate a scene via Home Assistant."""
+    headers = {
+        "Authorization": f'Bearer {config["haKey"]}',
+        "Content-Type": "application/json",
+    }
+    try:
+        result = requests.post(
+            f'{config["homeassistant"]["apiUrl"]}/api/services/scene/turn_on',
+            json={"entity_id": entity_id},
+            headers=headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        if not 200 <= result.status_code < 300:
+            logger.error(
+                "Failed to activate scene %s: %s %s",
+                entity_id,
+                result.status_code,
+                result.text,
+            )
+            return Exception("Error activating scene.")
+        return None
+    except requests.RequestException as error:
+        logger.error(
+            "Exception when activating scene %s: %s", entity_id, error
+        )
         return error
