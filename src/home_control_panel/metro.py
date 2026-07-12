@@ -163,15 +163,6 @@ class MetroSchedule(Static):
                                 continue
                         self.mount(MetroEntry(entry))
 
-                    # Signal immediate refresh if any departure is ≤ 1 min away
-                    for entry in departures[:5]:
-                        expected = entry.get("expected", "") or entry.get("scheduled", "")
-                        if expected:
-                            dt = TZ.localize(datetime.fromisoformat(expected))
-                            if 0 <= (dt - now).total_seconds() <= 60:
-                                touch_trigger("_trigger_metro")
-                                break
-
                     for line in self.query(MetroLine):
                         line.refresh_data()
 
