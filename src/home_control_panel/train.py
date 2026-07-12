@@ -150,6 +150,11 @@ class ScheduleLine(Horizontal):
         departure = f"{int(delta / 60)} min"
         self.query_one(".schedule-time", Static).update(departure)
 
+    def is_past(self):
+        row = self.schedule
+        advertised_time = datetime.fromisoformat(row["AdvertisedTimeAtLocation"])
+        return datetime.now(tz=pytz.UTC) > advertised_time
+
 
 class ScheduleEntry(Static):
     def __init__(self, schedule, stations):
@@ -277,8 +282,11 @@ class TrainSchedule(Static):
                 self.set_loading(False)
 
         else:
-            for line in self.query(ScheduleLine):
-                line.refresh_time()
+            for line in list(self.query(ScheduleLine)):
+                if line.is_past():
+                    line.parent.remove()
+                else:
+                    line.refresh_time()
 
     def on_mount(self):
         self.border_title = "Train"

@@ -75,6 +75,14 @@ class BusLine(Horizontal):
         time_display = f"[strike]{mins}[/]" if cancelled else mins
         self.query_one(".schedule-time", Static).update(time_display)
 
+    def is_past(self):
+        entry = self.entry
+        expected = entry.get("expected", "") or entry.get("scheduled", "")
+        if not expected:
+            return False
+        dt = TZ.localize(datetime.fromisoformat(expected))
+        return datetime.now(tz=pytz.UTC) > dt
+
 
 class BusEntry(Static):
     def __init__(self, entry):
@@ -169,8 +177,11 @@ class BusSchedule(Static):
                 self.set_loading(False)
 
         else:
-            for line in self.query(BusLine):
-                line.refresh_time()
+            for line in list(self.query(BusLine)):
+                if line.is_past():
+                    line.parent.remove()
+                else:
+                    line.refresh_time()
 
     def on_mount(self):
         self.border_title = "Bus"
