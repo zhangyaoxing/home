@@ -5,7 +5,8 @@ from datetime import datetime
 import pytz
 from rich.markup import escape
 from textual.app import ComposeResult
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
+from textual.screen import ModalScreen
 from textual.widgets import Rule, Static
 
 from home_control_panel.common_widgets import ScrollingLabel
@@ -230,7 +231,8 @@ class TrainSchedule(Static):
         self._data_signature = None
 
     def compose(self) -> ComposeResult:
-        yield Static()
+        yield Vertical(id="schedule-entries")
+        yield Static("\u25b8 Notices", id="notice-toggle")
 
     def _check_cache(self):
         mtime = cache_mtime(self.CACHE_FILE)
@@ -259,8 +261,9 @@ class TrainSchedule(Static):
                     station = self.stations.get(config["train"]["stationCode"], "")
 
                     now = datetime.now(tz=pytz.UTC)
-                    self.remove_children()
-                    self.mount(
+                    entries = self.query_one("#schedule-entries", Vertical)
+                    entries.remove_children()
+                    entries.mount(
                         Horizontal(
                             Static("Line", classes="schedule-route"),
                             Static("Track", classes="schedule-track"),
@@ -274,7 +277,7 @@ class TrainSchedule(Static):
                         )
                         if now > advertised_time:
                             continue
-                        self.mount(ScheduleEntry(schedule, self.stations))
+                        entries.mount(ScheduleEntry(schedule, self.stations))
 
                     for line in self.query(ScheduleLine):
                         line.refresh_data()
@@ -305,12 +308,102 @@ class TrainSchedule(Static):
             self.refresh_schedule()
 
     def on_click(self, event):
+        if event.widget.id == "notice-toggle":
+            self.app.push_screen(NoticesScreen())
+            return
         if event.widget is not self:
             return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
         self.border_subtitle = "[dim]Refreshing...[/]"
         touch_trigger("_trigger_train_schedule")
+
+
+class NoticesScreen(ModalScreen):
+    """Modal screen that displays Station Notices at 2/3 size, centered."""
+
+    CACHE_FILE = "train_messages.json"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cache_mtime = 0
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="modal-container"):
+            yield Static("Loading notices...", id="modal-status")
+
+    def _load_notices(self):
+        mtime = cache_mtime(self.CACHE_FILE)
+        if mtime <= self._cache_mtime:
+            return
+        self._cache_mtime = mtime
+
+        container = self.query_one("#modal-container", Vertical)
+        container.border_title = "Station Notices"
+
+        cached = read_cache(self.CACHE_FILE)
+        if cached is None:
+            self.query_one("#modal-status", Static).update("No notices available.")
+            return
+
+        messages = cached["data"].get("messages", [])
+        if not messages:
+            self.query_one("#modal-status", Static).update("No notices at this time.")
+            station_name = cached["data"].get("station_name", "")
+            if station_name:
+                container.border_subtitle = station_name
+            return
+
+        station_name = cached["data"].get("station_name", "")
+        container.border_subtitle = (
+            f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
+        )
+
+        messages = sorted(
+            messages,
+            key=lambda m: m["raw"].get("Status") != "Lag",
+        )
+
+        container.remove_children()
+        for entry in messages:
+            message = entry["raw"]
+            display_text = entry["summary"]
+            status_class = "lag" if message.get("Status") == "Lag" else "normal"
+            container.mount(
+                ScrollingLabel(display_text, classes=status_class)
+            )
+            container.mount(Rule())
+
+    def on_mount(self):
+        self._load_notices()
+        self.set_interval(config["tuiRefreshInterval"], self._load_notices)
+
+    def on_click(self, event):
+        modal = self.query_one("#modal-container")
+        # Check if click is inside the modal container
+        widget = event.widget
+        inside = False
+        while widget is not None:
+            if widget is modal:
+                inside = True
+                break
+            widget = widget.parent
+
+        if not inside:
+            self.dismiss()
+            return
+
+        # Click inside modal → refresh (with 60s throttle)
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        container = self.query_one("#modal-container", Vertical)
+        container.border_subtitle = "[dim]Refreshing...[/]"
+        touch_trigger("_trigger_train_messages")
+        self._cache_mtime = 0
+
+    def on_key(self, event):
+        if event.key == "escape":
+            self.dismiss()
 
 
 class Train(Static):

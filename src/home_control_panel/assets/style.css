@@ -85,10 +85,35 @@ Screen {
     height: 100%;
     border: solid greenyellow;
     padding: 1 1 0 1;
+    display: none;
+}
+
+#notice-toggle {
+    dock: bottom;
+    width: 100%;
+    height: 1;
+    content-align: center middle;
+    color: $text;
+    background: $panel;
+    text-style: bold;
+}
+
+NoticesScreen {
+    layout: vertical;
+    align: center middle;
+}
+
+#modal-container {
+    width: 66%;
+    height: 66%;
+    border: solid greenyellow;
+    background: $surface;
+    padding: 1 1 0 1;
+    overflow-y: auto;
 }
 
 #transit {
-    width: 4fr;
+    width: 1fr;
     height: 100%;
 }
 
@@ -104,6 +129,59 @@ Screen {
     height: 1.5fr;
     border: solid greenyellow;
     overflow: hidden;
+}
+
+#lights {
+    width: 3fr;
+    height: 100%;
+    layout: horizontal;
+    border: solid greenyellow;
+    overflow-x: auto;
+    padding: 0;
+}
+
+RoomSection {
+    width: 1fr;
+    height: 100%;
+    border: solid #404040;
+    border-title-color: cyan;
+    border-title-style: bold;
+    padding: 0 1;
+    margin: 0 1 0 0;
+}
+
+LightCheckbox {
+    color: white;
+}
+
+LightCheckbox.light-on {
+    background: white;
+    color: black;
+}
+
+LightCheckbox.light-off {
+    background: black;
+    color: white;
+}
+
+Checkbox {
+    color: white;
+}
+
+Checkbox > .toggle--button {
+    color: white;
+}
+
+Checkbox > .toggle--label {
+    color: white;
+}
+
+.light-row {
+    color: white;
+}
+
+.light-error {
+    color: red;
 }
 
 #right_panel {

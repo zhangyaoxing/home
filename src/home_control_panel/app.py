@@ -12,6 +12,7 @@ from textual.containers import Horizontal, Vertical
 from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config
 from home_control_panel.bus import BusSchedule
+from home_control_panel.lights import Lights
 from home_control_panel.metro import MetroSchedule
 from home_control_panel.sensors import Sensors
 from home_control_panel.train import TrainSchedule, TrainStationMessage
@@ -53,6 +54,7 @@ class HomeApp(App):
             with Vertical(id="transit"):
                 yield MetroSchedule(id="metro")
                 yield BusSchedule(id="bus")
+            yield Lights(id="lights")
         yield WeatherNext(id="weather_next")
         yield Sensors(id="sensors")
         yield WeatherChart(id="weather_chart")
@@ -69,6 +71,7 @@ class HomeApp(App):
         self.query_one("#bus", BusSchedule).refresh_bus()
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
+        self.query_one("#lights", Lights).refresh_lights()
 
 def main():
     logger.info("Starting HomeApp...")

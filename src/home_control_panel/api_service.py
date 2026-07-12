@@ -238,9 +238,7 @@ def _fetch_weather():
     )
 
 
-def _fetch_metro(state, last_call):
-    if is_freq_throttled(last_call):
-        return last_call
+def _fetch_metro(state):
     error, result = api_metro_departures()
     now = datetime.now()
     if error or result is None:
@@ -279,9 +277,7 @@ def _fetch_metro(state, last_call):
     return now
 
 
-def _fetch_bus(state, last_call):
-    if is_freq_throttled(last_call):
-        return last_call
+def _fetch_bus(state):
     error, result = api_bus_departures()
     now = datetime.now()
     if error or result is None:
@@ -325,7 +321,7 @@ def main():
 
     state = _load_state()
 
-    sensor_interval = config["homeassistant"]["refreshInterval"]
+    sensor_interval = config["homeassistant"]["sensorRefreshInterval"]
     weather_interval = config["weather"]["refreshInterval"]
     message_interval = config["train"]["message"]["updateIntervalMin"] * 60
     schedule_interval = config["train"]["apiFreqCheck"]
@@ -336,7 +332,7 @@ def main():
     now = datetime.now()
 
     def _jitter(interval):
-        return now - timedelta(seconds=random.uniform(0, interval))
+        return now - timedelta(seconds=interval - random.uniform(0, 5))
 
     last_sensors = _jitter(sensor_interval)
     last_weather = _jitter(weather_interval)
@@ -346,8 +342,6 @@ def main():
     last_bus = _jitter(bus_interval)
     last_msg_call = datetime.min
     last_sched_call = datetime.min
-    last_metro_call = datetime.min
-    last_bus_call = datetime.min
     last_stations_check = (
         _jitter(station_interval)
         if state.get("stations_updated") is None
@@ -405,22 +399,16 @@ def main():
         if (CACHE_DIR / "_trigger_metro").exists():
             _clear_trigger("_trigger_metro")
             last_metro = datetime.min
-            last_metro_call = datetime.min
         if (now - last_metro).total_seconds() >= metro_interval:
-            result = _fetch_metro(state, last_metro_call)
-            if result != last_metro_call:
-                last_metro_call = result
+            _fetch_metro(state)
             last_metro = now
             _save_state(state)
 
         if (CACHE_DIR / "_trigger_bus").exists():
             _clear_trigger("_trigger_bus")
             last_bus = datetime.min
-            last_bus_call = datetime.min
         if (now - last_bus).total_seconds() >= bus_interval:
-            result = _fetch_bus(state, last_bus_call)
-            if result != last_bus_call:
-                last_bus_call = result
+            _fetch_bus(state)
             last_bus = now
             _save_state(state)
 

@@ -73,7 +73,9 @@
   },
   "homeassistant": {
     "apiUrl": "http://homeassistant.local:8123",
-    "refreshInterval": 60,
+    "sensorRefreshInterval": 60,
+    "areaRefreshInterval": 300,
+    "lightsRefreshInterval": 5,
     "humidityWarningThreshold": [
       35,
       30,
@@ -104,6 +106,21 @@
       ],
       "illu": [
         "sensor.tz3000_9kbbfeho_ts0222_illuminance"
+      ]
+    },
+    "areas": {
+      "Work Corner": [
+        "light.desk_light_3"
+      ],
+      "Living Room": [
+        "switch.ceiling_lamp_switch",
+        "switch.power_strip_switch_5",
+        "light.luo_di_deng",
+        "light.dan_se_wifidiao_guang_qi"
+      ],
+      "Kitchen": [
+        "switch.smart_plug_in_unit_2",
+        "light.table_lamp_switch"
       ]
     }
   }
