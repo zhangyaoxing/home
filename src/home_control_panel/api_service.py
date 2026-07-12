@@ -7,8 +7,9 @@ Start alongside the TUI app. Each widget watches its cache file for changes.
 import hashlib
 import logging
 import os
+import random
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -323,21 +324,6 @@ def main():
     logger.info("API service starting...")
 
     state = _load_state()
-    last_sensors = datetime.min
-    last_weather = datetime.min
-    last_messages = datetime.min
-    last_schedule = datetime.min
-    last_metro = datetime.min
-    last_bus = datetime.min
-    last_msg_call = datetime.min
-    last_sched_call = datetime.min
-    last_metro_call = datetime.min
-    last_bus_call = datetime.min
-    last_stations_check = (
-        datetime.min
-        if state.get("stations_updated") is None
-        else datetime.fromisoformat(state["stations_updated"])
-    )
 
     sensor_interval = config["homeassistant"]["refreshInterval"]
     weather_interval = config["weather"]["refreshInterval"]
@@ -346,6 +332,27 @@ def main():
     metro_interval = config["sl"]["refreshInterval"]
     bus_interval = config["sl"]["refreshInterval"]
     station_interval = config["train"]["stationUpdateInterval"]
+
+    now = datetime.now()
+
+    def _jitter(interval):
+        return now - timedelta(seconds=random.uniform(0, interval))
+
+    last_sensors = _jitter(sensor_interval)
+    last_weather = _jitter(weather_interval)
+    last_messages = _jitter(message_interval)
+    last_schedule = _jitter(schedule_interval)
+    last_metro = _jitter(metro_interval)
+    last_bus = _jitter(bus_interval)
+    last_msg_call = datetime.min
+    last_sched_call = datetime.min
+    last_metro_call = datetime.min
+    last_bus_call = datetime.min
+    last_stations_check = (
+        _jitter(station_interval)
+        if state.get("stations_updated") is None
+        else datetime.fromisoformat(state["stations_updated"])
+    )
 
     while True:
         now = datetime.now()
