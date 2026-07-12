@@ -19,12 +19,13 @@ def api_bus_departures():
         config["sl"]["busSiteId"],
         key,
         "BUS",
+        config["sl"]["timeWindow"],
     )
 
 
-def _fetch_sl_departures(site_id, key, transport):
+def _fetch_sl_departures(site_id, key, transport, time_window):
     url = f"{config['sl']['apiUrl']}/sites/{site_id}/departures"
-    params = {"transport": transport}
+    params = {"transport": transport, "timeWindow": time_window}
     try:
         result = requests.get(
             url,
@@ -76,4 +77,5 @@ def api_metro_departures():
         config["sl"]["metroSiteId"],
         key,
         "METRO",
+        config["sl"]["timeWindow"],
     )

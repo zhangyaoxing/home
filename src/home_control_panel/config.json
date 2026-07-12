@@ -48,6 +48,7 @@
     "metroSiteId": 9116,
     "busSiteId": 1065,
     "refreshInterval": 300,
+    "timeWindow": 60,
     "metroLineColors": {
       "10": "#0055A4",
       "11": "#0055A4",
