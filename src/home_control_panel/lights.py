@@ -4,7 +4,7 @@ from datetime import datetime
 from rich.markup import escape
 from textual.app import ComposeResult
 from textual.containers import Vertical
-from textual.widgets import Checkbox, Static
+from textual.widgets import Button, Checkbox, Static
 from textual import work
 from textual.message import Message
 
@@ -79,14 +79,14 @@ class RoomSection(Vertical):
         self.border_title = self.room_data["area"]
 
 
-class SceneButton(Static):
-    """A clickable scene name that activates the scene."""
+class SceneButton(Button):
+    """A button that activates a Home Assistant scene."""
 
     def __init__(self, scene, *args, **kwargs):
         super().__init__(escape(scene["name"]), *args, **kwargs)
         self.entity_id = scene["entity_id"]
 
-    def on_click(self):
+    def on_button_pressed(self, event: Button.Pressed):
         self.run_worker(
             lambda: api_ha_activate_scene(self.entity_id),
             thread=True,
@@ -103,7 +103,7 @@ class SceneSection(Vertical):
 
     def compose(self) -> ComposeResult:
         for scene in self.scenes_data:
-            yield SceneButton(scene, classes="light-row")
+            yield SceneButton(scene)
 
     def on_mount(self):
         self.border_title = "Scenes"
@@ -133,7 +133,7 @@ class Lights(Static):
         rooms = data.get("rooms", [])
         scenes = data.get("scenes", [])
         sig = tuple(
-            (light["entity_id"], light["state"])
+            light["entity_id"]
             for room in rooms
             for light in room["lights"]
         )
@@ -196,9 +196,7 @@ class Lights(Static):
         if event.widget is not self:
             return
         self.border_subtitle = "[dim]Refreshing...[/]"
-        self.set_loading(True)
         self._fetch()
 
     def on_refresh_request(self, event: RefreshRequest):
-        self.set_loading(True)
         self._fetch()
