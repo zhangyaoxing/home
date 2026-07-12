@@ -80,7 +80,7 @@ Screen {
 }
 
 #message {
-    width: 3fr;
+    width: 11fr;
     overflow: hidden;
     height: 100%;
     border: solid greenyellow;
@@ -88,7 +88,7 @@ Screen {
 }
 
 #transit {
-    width: 2fr;
+    width: 4fr;
     height: 100%;
 }
 
