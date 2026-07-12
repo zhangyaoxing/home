@@ -101,7 +101,9 @@ class TrainStationMessage(Static):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_message()
 
-    def on_click(self):
+    def on_click(self, event):
+        if event.widget is not self or event.y != 0:
+            return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
         self.border_subtitle = "[dim]Refreshing...[/]"
@@ -302,7 +304,9 @@ class TrainSchedule(Static):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_schedule()
 
-    def on_click(self):
+    def on_click(self, event):
+        if event.widget is not self or event.y != 0:
+            return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
         self.border_subtitle = "[dim]Refreshing...[/]"

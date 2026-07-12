@@ -142,7 +142,9 @@ class WeatherNext(Static):
         self._table.clear()
         self._table.add_row("Unavailable", "Weather service unavailable")
 
-    def on_click(self):
+    def on_click(self, event):
+        if event.widget is not self or event.y != 0:
+            return
         if time.time() - cache_mtime("weather.json") < 60:
             return
         self.border_subtitle = "[dim]Refreshing...[/]"
@@ -531,7 +533,9 @@ class Weather(Static):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_data()
 
-    def on_click(self):
+    def on_click(self, event):
+        if event.widget is not self or event.y != 0:
+            return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
         if self._weather_next is not None:
