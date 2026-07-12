@@ -149,6 +149,7 @@ class Lights(Static):
                 self.mount(SceneSection(scenes))
             self._data_signature = sig
         else:
+            changed = False
             for room in rooms:
                 for light in room["lights"]:
                     cb = self._checkboxes.get(light["entity_id"])
@@ -161,6 +162,9 @@ class Lights(Static):
                         cb.set_class(on, "light-on")
                         cb.set_class(not on, "light-off")
                         cb._toggling = False
+                        changed = True
+            if not changed:
+                return
 
         self._last_fetch_at = datetime.now()
         self.set_loading(False)
