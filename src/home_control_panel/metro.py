@@ -149,7 +149,7 @@ class MetroSchedule(Static):
         self.border_title = "Metro"
         self.set_loading(True)
         self._check_cache()
-        self.set_interval(5, self._check_cache)
+        self.set_interval(config["tuiRefreshInterval"], self._check_cache)
 
     def refresh_metro(self):
         self._cache_mtime = 0

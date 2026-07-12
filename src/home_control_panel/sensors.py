@@ -157,7 +157,7 @@ class Sensors(Static):
         self.border_title = "In-House Sensors"
         self.set_loading(True)
         self._check_cache()
-        self.set_interval(5, self._check_cache)
+        self.set_interval(config["tuiRefreshInterval"], self._check_cache)
 
     def refresh_data(self):
         self._cache_mtime = 0

@@ -4,6 +4,7 @@
   "logLevel": "INFO",
   "timezone": "Europe/Stockholm",
   "warningInterval": 5,
+  "tuiRefreshInterval": 30,
   "train": {
     "apiUrl": "https://api.trafikinfo.trafikverket.se/v2/data.json",
     "stationCode": "Sod",

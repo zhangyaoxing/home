@@ -75,7 +75,7 @@ class TrainStationMessage(Static):
         self.border_title = "Station Notices"
         self.set_loading(True)
         self._check_cache()
-        self.set_interval(5, self._check_cache)
+        self.set_interval(config["tuiRefreshInterval"], self._check_cache)
 
     def refresh_message(self):
         self._cache_mtime = 0
@@ -232,7 +232,7 @@ class TrainSchedule(Static):
         self.border_title = "Train"
         self.set_loading(True)
         self._check_cache()
-        self.set_interval(5, self._check_cache)
+        self.set_interval(config["tuiRefreshInterval"], self._check_cache)
 
     def refresh_schedule(self):
         self._cache_mtime = 0
