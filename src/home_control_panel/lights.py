@@ -62,18 +62,14 @@ class LightCheckbox(Checkbox):
 class RoomSection(Vertical):
     """A subsection showing one room name and its light checkboxes."""
 
-    def __init__(self, room_data, *args, **kwargs):
+    def __init__(self, room_data, checkboxes, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.room_data = room_data
+        self._checkboxes = checkboxes
 
     def compose(self) -> ComposeResult:
-        for light in self.room_data["lights"]:
-            yield LightCheckbox(
-                light["entity_id"],
-                escape(light["name"]),
-                light["state"],
-                classes="light-row",
-            )
+        for cb in self._checkboxes:
+            yield cb
 
     def on_mount(self):
         self.border_title = self.room_data["area"]
@@ -141,9 +137,18 @@ class Lights(Static):
             self.remove_children()
             self._checkboxes.clear()
             for room in rooms:
-                section = RoomSection(room)
+                checkboxes = [
+                    LightCheckbox(
+                        light["entity_id"],
+                        escape(light["name"]),
+                        light["state"],
+                        classes="light-row",
+                    )
+                    for light in room["lights"]
+                ]
+                section = RoomSection(room, checkboxes)
                 self.mount(section)
-                for cb in section.query(LightCheckbox):
+                for cb in checkboxes:
                     self._checkboxes[cb.entity_id] = cb
             if scenes:
                 self.mount(SceneSection(scenes))
@@ -172,7 +177,7 @@ class Lights(Static):
         self.border_subtitle = f"[dim]Updated {ts}[/]"
 
     @work(thread=True, exclusive=True)
-    async def _fetch(self) -> None:
+    def _fetch(self) -> None:
         error, data = api_ha_lights()
         if error or data is None:
             logger.warning("Failed to fetch HA lights: %s", error)
@@ -193,7 +198,6 @@ class Lights(Static):
         self.set_interval(self._fetch_interval, self._fetch)
 
     def refresh_lights(self):
-        self.set_loading(True)
         self._fetch()
 
     def on_click(self, event):
