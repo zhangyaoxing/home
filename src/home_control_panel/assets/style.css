@@ -159,8 +159,16 @@ LightCheckbox.light-on {
     color: black;
 }
 
+LightCheckbox.light-on .toggle--label {
+    color: black;
+}
+
 LightCheckbox.light-off {
     background: black;
+    color: white;
+}
+
+LightCheckbox.light-off .toggle--label {
     color: white;
 }
 
