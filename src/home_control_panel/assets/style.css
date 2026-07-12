@@ -91,9 +91,9 @@ Screen {
 #notice-toggle {
     dock: bottom;
     width: 100%;
-    height: 2;
-    content-align: center middle;
+    height: 3;
     color: $text;
+    content-align: center middle;
     background: $panel;
     text-style: bold;
 }
