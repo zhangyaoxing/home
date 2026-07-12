@@ -23,8 +23,9 @@
     }
   },
   "sl": {
-    "metroStationCode": "Ste",
-    "metroLimit": 8
+    "apiUrl": "https://transport.integration.sl.se/v1",
+    "siteId": 9116,
+    "timeWindow": 120
   },
   "weather": {
     "apiUrl": "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/{lon}/lat/{lat}/data.json",

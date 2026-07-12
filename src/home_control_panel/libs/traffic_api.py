@@ -102,37 +102,6 @@ def api_train_announcement():
     return api_request(reqBody)
 
 
-def api_metro_announcement():
-    reqBody = """<QUERY objecttype='TrainAnnouncement'
-          orderby='AdvertisedTimeAtLocation' schemaversion='1' limit="{limit}">
-      <FILTER>
-      <AND>
-          <OR>
-              <AND>
-                  <GT name='AdvertisedTimeAtLocation'
-                              value='$dateadd(-00:05:00)' />
-                  <LT name='AdvertisedTimeAtLocation'
-                              value='$dateadd(12:00:00)' />
-              </AND>
-              <GT name='EstimatedTimeAtLocation' value='$now' />
-          </OR>
-          <EQ name='LocationSignature' value='{code}' />
-          <EQ name='ActivityType' value='Avgang' />
-      </AND>
-      </FILTER>
-      <INCLUDE>AdvertisedTimeAtLocation</INCLUDE>
-      <INCLUDE>TrackAtLocation</INCLUDE>
-      <INCLUDE>FromLocation</INCLUDE>
-      <INCLUDE>ToLocation</INCLUDE>
-      <INCLUDE>ProductInformation</INCLUDE>
-      <INCLUDE>Deviation</INCLUDE>
-  </QUERY>""".format(
-        code=config["sl"]["metroStationCode"],
-        limit=config["sl"].get("metroLimit", 8),
-    )
-    return api_request(reqBody)
-
-
 def summarize_notice(text):
     key = config.get("dsKey")
     if not key:

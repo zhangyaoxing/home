@@ -16,7 +16,6 @@ load_dotenv()  # noqa: E402
 from home_control_panel.libs.cache import read_cache, write_cache  # noqa: E402
 from home_control_panel.libs.ha_api import api_ha  # noqa: E402
 from home_control_panel.libs.traffic_api import (  # noqa: E402
-    api_metro_announcement,
     api_train_announcement,
     api_train_message,
     api_train_stations,
@@ -24,6 +23,7 @@ from home_control_panel.libs.traffic_api import (  # noqa: E402
     summarize_notice,
     translate_texts,
 )
+from home_control_panel.libs.sl_api import api_metro_departures  # noqa: E402
 from home_control_panel.libs.utils import config  # noqa: E402
 from home_control_panel.libs.weather_api import api_weather  # noqa: E402
 
@@ -210,21 +210,18 @@ def _fetch_weather():
 def _fetch_metro(state, last_call):
     if is_freq_throttled(last_call):
         return last_call
-    error, data = api_metro_announcement()
+    error, result = api_metro_departures()
     now = datetime.now()
-    if error or not data:
-        logger.warning("Failed to fetch metro schedule: %s", error)
+    if error or result is None:
+        logger.warning("Failed to fetch metro departures: %s", error)
         return last_call
 
-    announcements = data["RESPONSE"]["RESULT"][0].get("TrainAnnouncement", [])
+    departures = result.get("departures", [])
+    station_name = result.get("name", "")
     old_translations = state["translations"]
-
     new_texts = []
-    for a in announcements:
-        for raw in _as_list(a.get("Deviation")):
-            t = _normalize_message(raw)
-            if t:
-                new_texts.append(t)
+    for d in departures:
+        new_texts.extend(d.get("deviations", []))
 
     untranslated = [t for t in new_texts if t not in old_translations]
     if untranslated:
@@ -233,26 +230,21 @@ def _fetch_metro(state, last_call):
             old_translations.update(translated)
             logger.info("Translated %d new metro texts", len(translated))
 
-    for a in announcements:
-        raw = [_normalize_message(t) for t in _as_list(a.get("Deviation")) if t]
-        a["Deviation_tr"] = {t: old_translations.get(t, t) for t in raw}
-        # Extract line number from ProductInformation
-        products = a.get("ProductInformation", [])
-        if products:
-            line = products[0].get("DisplayName") or products[0].get("Description")
-            a["Line"] = line
+    for d in departures:
+        raw = d.get("deviations", [])
+        d["deviations_tr"] = {t: old_translations.get(t, t) for t in raw}
 
     write_cache(
         "metro_schedule.json",
         {
             "timestamp": now.isoformat(),
             "data": {
-                "announcements": announcements,
-                "station_names": state.get("station_names", {}),
+                "name": station_name,
+                "departures": departures,
             },
         },
     )
-    logger.info("Metro schedule updated: %d announcements", len(announcements))
+    logger.info("Metro schedule updated: %d departures", len(departures))
     return now
 
 
