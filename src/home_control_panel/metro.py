@@ -66,6 +66,20 @@ class MetroLine(Horizontal):
     def on_mount(self):
         self.refresh_data()
 
+    def refresh_time(self):
+        entry = self.entry
+        expected = entry.get("expected", "") or entry.get("scheduled", "")
+        cancelled = entry.get("state") == "CANCELLED"
+        if expected:
+            dt = TZ.localize(datetime.fromisoformat(expected))
+            now = datetime.now(tz=pytz.UTC)
+            delta = int((dt - now).total_seconds() / 60)
+            mins = "Nu" if delta <= 0 else f"{delta} min"
+        else:
+            mins = ""
+        time_display = f"[strike]{mins}[/]" if cancelled else mins
+        self.query_one(".schedule-time", Static).update(time_display)
+
 
 class MetroEntry(Static):
     def __init__(self, entry):
@@ -150,14 +164,18 @@ class MetroSchedule(Static):
                                 touch_trigger("_trigger_metro")
                                 break
 
+                    for line in self.query(MetroLine):
+                        line.refresh_data()
+
                 station_name = cached["data"].get("name", "")
                 self.border_subtitle = (
                     f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
                 )
                 self.set_loading(False)
 
-        for line in self.query(MetroLine):
-            line.refresh_data()
+        else:
+            for line in self.query(MetroLine):
+                line.refresh_time()
 
     def on_mount(self):
         self.border_title = "Metro"

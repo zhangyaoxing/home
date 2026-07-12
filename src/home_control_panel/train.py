@@ -142,6 +142,14 @@ class ScheduleLine(Horizontal):
     def on_mount(self):
         self.refresh_data()
 
+    def refresh_time(self):
+        row = self.schedule
+        advertised_time = datetime.fromisoformat(row["AdvertisedTimeAtLocation"])
+        now = datetime.now(tz=pytz.UTC)
+        delta = (advertised_time - now).total_seconds()
+        departure = f"{int(delta / 60)} min"
+        self.query_one(".schedule-time", Static).update(departure)
+
 
 class ScheduleEntry(Static):
     def __init__(self, schedule, stations):
@@ -261,12 +269,16 @@ class TrainSchedule(Static):
                             continue
                         self.mount(ScheduleEntry(schedule, self.stations))
 
+                    for line in self.query(ScheduleLine):
+                        line.refresh_data()
+
                 station = self.stations.get(config["train"]["stationCode"], "")
                 self.border_subtitle = f"{station}  [dim]Updated {format_cache_time(cached)}[/]"
                 self.set_loading(False)
 
-        for line in self.query(ScheduleLine):
-            line.refresh_data()
+        else:
+            for line in self.query(ScheduleLine):
+                line.refresh_time()
 
     def on_mount(self):
         self.border_title = "Train"
