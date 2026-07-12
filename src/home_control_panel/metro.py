@@ -8,7 +8,12 @@ from textual.containers import Horizontal
 from textual.widgets import Static
 
 from home_control_panel.common_widgets import ScrollingLabel
-from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
+from home_control_panel.libs.cache import (
+    cache_mtime,
+    format_cache_time,
+    read_cache,
+    touch_trigger,
+)
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -120,6 +125,15 @@ class MetroSchedule(Static):
                 if now > dt:
                     continue
             self.mount(MetroEntry(entry))
+
+        # Signal immediate refresh if any departure is ≤ 1 min away
+        for entry in departures[:5]:
+            expected = entry.get("expected", "") or entry.get("scheduled", "")
+            if expected:
+                dt = TZ.localize(datetime.fromisoformat(expected))
+                if 0 <= (dt - now).total_seconds() <= 60:
+                    touch_trigger("_trigger_metro")
+                    break
 
         self.border_subtitle = (
             f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"

@@ -16,7 +16,11 @@ load_dotenv()  # noqa: E402
 
 os.environ["LOG_FILE"] = "api-service.log"
 
-from home_control_panel.libs.cache import read_cache, write_cache  # noqa: E402
+from home_control_panel.libs.cache import (  # noqa: E402
+    CACHE_DIR,
+    read_cache,
+    write_cache,
+)
 from home_control_panel.libs.ha_api import api_ha  # noqa: E402
 from home_control_panel.libs.traffic_api import (  # noqa: E402
     api_train_announcement,
@@ -54,6 +58,15 @@ def _save_state(state):
         "stations_updated": state.get("stations_updated"),
     }
     write_cache(_STATE_FILE, slim)
+
+
+def _clear_trigger(name):
+    """Delete a trigger file if it exists."""
+    path = CACHE_DIR / name
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def _normalize_message(text):
@@ -324,8 +337,8 @@ def main():
     weather_interval = config["weather"]["refreshInterval"]
     message_interval = config["train"]["message"]["updateIntervalMin"] * 60
     schedule_interval = config["train"]["apiFreqCheck"]
-    metro_interval = config["train"]["apiFreqCheck"]
-    bus_interval = config["train"]["apiFreqCheck"]
+    metro_interval = config["sl"]["refreshInterval"]
+    bus_interval = config["sl"]["refreshInterval"]
     station_interval = config["train"]["stationUpdateInterval"]
 
     while True:
@@ -358,19 +371,27 @@ def main():
             last_schedule = now
             _save_state(state)
 
-        if (now - last_metro).total_seconds() >= metro_interval:
+        metro_triggered = (CACHE_DIR / "_trigger_metro").exists()
+        if (now - last_metro).total_seconds() >= metro_interval or metro_triggered:
+            if metro_triggered:
+                last_metro_call = datetime.min  # bypass throttle
             result = _fetch_metro(state, last_metro_call)
             if result != last_metro_call:
                 last_metro_call = result
             last_metro = now
             _save_state(state)
+            _clear_trigger("_trigger_metro")
 
-        if (now - last_bus).total_seconds() >= bus_interval:
+        bus_triggered = (CACHE_DIR / "_trigger_bus").exists()
+        if (now - last_bus).total_seconds() >= bus_interval or bus_triggered:
+            if bus_triggered:
+                last_bus_call = datetime.min  # bypass throttle
             result = _fetch_bus(state, last_bus_call)
             if result != last_bus_call:
                 last_bus_call = result
             last_bus = now
             _save_state(state)
+            _clear_trigger("_trigger_bus")
 
         time.sleep(1)
 

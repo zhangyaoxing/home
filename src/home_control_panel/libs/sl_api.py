@@ -24,7 +24,7 @@ def api_bus_departures():
 
 def _fetch_sl_departures(site_id, key, transport):
     url = f"{config['sl']['apiUrl']}/sites/{site_id}/departures"
-    params = {"timeWindow": config["sl"].get("timeWindow", 120), "transport": transport}
+    params = {"transport": transport}
     try:
         result = requests.get(
             url,
@@ -72,7 +72,7 @@ def api_metro_departures():
         return Exception("slKey not configured"), None
 
     return _fetch_sl_departures(
-        config["sl"]["siteId"],
+        config["sl"]["metroSiteId"],
         key,
         "METRO",
     )

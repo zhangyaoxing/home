@@ -44,3 +44,8 @@ def format_cache_time(cached):
         return ts[11:16] if "T" in ts else ts[:5]
     except (KeyError, IndexError):
         return ""
+
+
+def touch_trigger(name):
+    """Create/update a trigger file to signal the api service."""
+    (CACHE_DIR / name).touch(exist_ok=True)

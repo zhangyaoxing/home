@@ -9,11 +9,31 @@
     "stationCode": "Sod",
     "apiFreqCheck": 60,
     "apiFreqControl": [
-      {"from": 0, "to": 7, "intervalMin": 30},
-      {"from": 7, "to": 9, "intervalMin": 2},
-      {"from": 9, "to": 17, "intervalMin": 10},
-      {"from": 17, "to": 19, "intervalMin": 2},
-      {"from": 19, "to": 24, "intervalMin": 10}
+      {
+        "from": 0,
+        "to": 7,
+        "intervalMin": 30
+      },
+      {
+        "from": 7,
+        "to": 9,
+        "intervalMin": 2
+      },
+      {
+        "from": 9,
+        "to": 17,
+        "intervalMin": 10
+      },
+      {
+        "from": 17,
+        "to": 19,
+        "intervalMin": 2
+      },
+      {
+        "from": 19,
+        "to": 24,
+        "intervalMin": 10
+      }
     ],
     "stationUpdateInterval": 86400,
     "message": {
@@ -24,9 +44,9 @@
   },
   "sl": {
     "apiUrl": "https://transport.integration.sl.se/v1",
-    "siteId": 9116,
-    "timeWindow": 120,
-    "busSiteId": 1065
+    "metroSiteId": 9116,
+    "busSiteId": 1065,
+    "refreshInterval": 300
   },
   "weather": {
     "apiUrl": "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/{lon}/lat/{lat}/data.json",
@@ -34,13 +54,25 @@
     "lon": 18.034304,
     "refreshInterval": 300,
     "detailsInterval": 10,
-    "probabilityWarningThreshold": [30, 50, 70]
+    "probabilityWarningThreshold": [
+      30,
+      50,
+      70
+    ]
   },
   "homeassistant": {
     "apiUrl": "http://homeassistant.local:8123",
     "refreshInterval": 30,
-    "humidityWarningThreshold": [35, 30, 25],
-    "plantHumWarningThreshold": [50, 40, 30],
+    "humidityWarningThreshold": [
+      35,
+      30,
+      25
+    ],
+    "plantHumWarningThreshold": [
+      50,
+      40,
+      30
+    ],
     "sensors": {
       "temp": [
         "sensor.multi_sensor_temperature",
