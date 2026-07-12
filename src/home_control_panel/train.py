@@ -39,6 +39,7 @@ class TrainStationMessage(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cache_mtime = 0
+        self._data_signature = None
 
     def compose(self) -> ComposeResult:
         yield Static()
@@ -56,27 +57,35 @@ class TrainStationMessage(Static):
             return
 
         messages = cached["data"]["messages"]
-        station_name = cached["data"].get("station_name", "")
-        messages = sorted(
-            messages,
-            key=lambda m: m["raw"].get("Status") != "Lag",
+        sig = tuple(
+            (_normalize_message(m["raw"].get("FreeText", "")), m["raw"].get("Status"))
+            for m in messages
         )
 
-        self.remove_children()
-        for entry in messages:
-            message = entry["raw"]
-            display_text = entry["summary"]
-            status_class = "lag" if message.get("Status") == "Lag" else "normal"
-            self.mount(
-                ScrollingLabel(
-                    display_text,
-                    classes=status_class,
-                )
+        if sig != self._data_signature:
+            self._data_signature = sig
+            station_name = cached["data"].get("station_name", "")
+            messages = sorted(
+                messages,
+                key=lambda m: m["raw"].get("Status") != "Lag",
             )
-            self.mount(Rule())
 
-        self.set_loading(False)
+            self.remove_children()
+            for entry in messages:
+                message = entry["raw"]
+                display_text = entry["summary"]
+                status_class = "lag" if message.get("Status") == "Lag" else "normal"
+                self.mount(
+                    ScrollingLabel(
+                        display_text,
+                        classes=status_class,
+                    )
+                )
+                self.mount(Rule())
+
+        station_name = cached["data"].get("station_name", "")
         self.border_subtitle = f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
+        self.set_loading(False)
 
     def on_mount(self):
         self.border_title = "Station Notices"
@@ -95,8 +104,8 @@ class TrainStationMessage(Static):
     def on_click(self):
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
+        self.border_subtitle = "[dim]Refreshing...[/]"
         touch_trigger("_trigger_train_messages")
-        self.refresh_message()
 
 
 class ScheduleLine(Horizontal):
@@ -203,47 +212,61 @@ class TrainSchedule(Static):
         super().__init__(*args, **kwargs)
         self.stations = {}
         self._cache_mtime = 0
+        self._data_signature = None
 
     def compose(self) -> ComposeResult:
         yield Static()
 
     def _check_cache(self):
         mtime = cache_mtime(self.CACHE_FILE)
-        if mtime <= self._cache_mtime:
-            return
-        self._cache_mtime = mtime
-        logger.info("Reloading train schedule from cache")
+        if mtime > self._cache_mtime:
+            self._cache_mtime = mtime
+            logger.info("Reloading train schedule from cache")
 
-        cached = read_cache(self.CACHE_FILE)
-        if cached is None:
-            self.set_loading(False)
-            return
+            cached = read_cache(self.CACHE_FILE)
+            if cached is None:
+                self.set_loading(False)
+            else:
+                data = cached["data"]
+                schedules = data.get("announcements", [])
 
-        data = cached["data"]
-        self.stations = data.get("station_names", {})
-        station = self.stations.get(config["train"]["stationCode"], "")
-        self.border_subtitle = f"{station}  [dim]Updated {format_cache_time(cached)}[/]"
+                sig = tuple(
+                    (s.get("AdvertisedTimeAtLocation"), s.get("TrackAtLocation"),
+                     tuple(s.get("ToLocation", [])), s.get("Line", ""),
+                     tuple(_as_list(s.get("Deviation"))),
+                     tuple(_as_list(s.get("OtherInformation"))))
+                    for s in schedules
+                )
 
-        schedules = data.get("announcements", [])
-        now = datetime.now(tz=pytz.UTC)
-        self.remove_children()
-        self.mount(
-            Horizontal(
-                Static("Line", classes="schedule-route"),
-                Static("Track", classes="schedule-track"),
-                Static("Time", classes="schedule-time"),
-                classes="schedule-header",
-            )
-        )
-        for schedule in schedules:
-            advertised_time = datetime.fromisoformat(
-                schedule["AdvertisedTimeAtLocation"]
-            )
-            if now > advertised_time:
-                continue
-            self.mount(ScheduleEntry(schedule, self.stations))
+                if sig != self._data_signature:
+                    self._data_signature = sig
+                    self.stations = data.get("station_names", {})
+                    station = self.stations.get(config["train"]["stationCode"], "")
 
-        self.set_loading(False)
+                    now = datetime.now(tz=pytz.UTC)
+                    self.remove_children()
+                    self.mount(
+                        Horizontal(
+                            Static("Line", classes="schedule-route"),
+                            Static("Track", classes="schedule-track"),
+                            Static("Time", classes="schedule-time"),
+                            classes="schedule-header",
+                        )
+                    )
+                    for schedule in schedules:
+                        advertised_time = datetime.fromisoformat(
+                            schedule["AdvertisedTimeAtLocation"]
+                        )
+                        if now > advertised_time:
+                            continue
+                        self.mount(ScheduleEntry(schedule, self.stations))
+
+                station = self.stations.get(config["train"]["stationCode"], "")
+                self.border_subtitle = f"{station}  [dim]Updated {format_cache_time(cached)}[/]"
+                self.set_loading(False)
+
+        for line in self.query(ScheduleLine):
+            line.refresh_data()
 
     def on_mount(self):
         self.border_title = "Train"
@@ -262,8 +285,8 @@ class TrainSchedule(Static):
     def on_click(self):
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
+        self.border_subtitle = "[dim]Refreshing...[/]"
         touch_trigger("_trigger_train_schedule")
-        self.refresh_schedule()
 
 
 class Train(Static):

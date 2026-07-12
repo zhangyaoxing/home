@@ -350,9 +350,17 @@ def main():
     while True:
         now = datetime.now()
 
+        if (CACHE_DIR / "_trigger_sensors").exists():
+            _clear_trigger("_trigger_sensors")
+            last_sensors = datetime.min
+
         if (now - last_sensors).total_seconds() >= sensor_interval:
             _fetch_sensors()
             last_sensors = now
+
+        if (CACHE_DIR / "_trigger_weather").exists():
+            _clear_trigger("_trigger_weather")
+            last_weather = datetime.min
 
         if (now - last_weather).total_seconds() >= weather_interval:
             _fetch_weather()
@@ -366,6 +374,7 @@ def main():
         if (CACHE_DIR / "_trigger_train_messages").exists():
             _clear_trigger("_trigger_train_messages")
             last_messages = datetime.min
+            last_msg_call = datetime.min
 
         if (now - last_messages).total_seconds() >= message_interval:
             result = _fetch_messages(state, last_msg_call)
@@ -377,6 +386,7 @@ def main():
         if (CACHE_DIR / "_trigger_train_schedule").exists():
             _clear_trigger("_trigger_train_schedule")
             last_schedule = datetime.min
+            last_sched_call = datetime.min
 
         if (now - last_schedule).total_seconds() >= schedule_interval:
             result = _fetch_schedule(state, last_sched_call)
@@ -388,6 +398,7 @@ def main():
         if (CACHE_DIR / "_trigger_metro").exists():
             _clear_trigger("_trigger_metro")
             last_metro = datetime.min
+            last_metro_call = datetime.min
         if (now - last_metro).total_seconds() >= metro_interval:
             result = _fetch_metro(state, last_metro_call)
             if result != last_metro_call:
@@ -398,6 +409,7 @@ def main():
         if (CACHE_DIR / "_trigger_bus").exists():
             _clear_trigger("_trigger_bus")
             last_bus = datetime.min
+            last_bus_call = datetime.min
         if (now - last_bus).total_seconds() >= bus_interval:
             result = _fetch_bus(state, last_bus_call)
             if result != last_bus_call:

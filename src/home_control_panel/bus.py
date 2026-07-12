@@ -91,56 +91,68 @@ class BusSchedule(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cache_mtime = 0
+        self._data_signature = None
 
     def compose(self) -> ComposeResult:
         yield Static()
 
     def _check_cache(self):
         mtime = cache_mtime(self.CACHE_FILE)
-        if mtime <= self._cache_mtime:
-            return
-        self._cache_mtime = mtime
-        logger.info("Reloading bus schedule from cache")
+        if mtime > self._cache_mtime:
+            self._cache_mtime = mtime
+            logger.info("Reloading bus schedule from cache")
 
-        cached = read_cache(self.CACHE_FILE)
-        if cached is None:
-            self.set_loading(False)
-            return
+            cached = read_cache(self.CACHE_FILE)
+            if cached is None:
+                self.set_loading(False)
+            else:
+                departures = cached["data"].get("departures", [])
+                sig = tuple(
+                    (d.get("line"), d.get("destination"), d.get("expected"),
+                     d.get("scheduled"), d.get("state"),
+                     tuple(d.get("deviations", [])))
+                    for d in departures[:5]
+                )
 
-        departures = cached["data"].get("departures", [])
-        station_name = cached["data"].get("name", "")
-        now = datetime.now(tz=pytz.UTC)
+                if sig != self._data_signature:
+                    self._data_signature = sig
+                    station_name = cached["data"].get("name", "")
+                    now = datetime.now(tz=pytz.UTC)
 
-        self.remove_children()
-        self.mount(
-            Horizontal(
-                Static("Line", classes="schedule-route"),
-                Static("", classes="schedule-track"),
-                Static("Time", classes="schedule-time"),
-                classes="schedule-header",
-            )
-        )
-        for entry in departures[:5]:
-            expected = entry.get("expected", "") or entry.get("scheduled", "")
-            if expected:
-                dt = TZ.localize(datetime.fromisoformat(expected))
-                if now > dt:
-                    continue
-            self.mount(BusEntry(entry))
+                    self.remove_children()
+                    self.mount(
+                        Horizontal(
+                            Static("Line", classes="schedule-route"),
+                            Static("", classes="schedule-track"),
+                            Static("Time", classes="schedule-time"),
+                            classes="schedule-header",
+                        )
+                    )
+                    for entry in departures[:5]:
+                        expected = entry.get("expected", "") or entry.get("scheduled", "")
+                        if expected:
+                            dt = TZ.localize(datetime.fromisoformat(expected))
+                            if now > dt:
+                                continue
+                        self.mount(BusEntry(entry))
 
-        # Signal immediate refresh if any departure is ≤ 1 min away
-        for entry in departures[:5]:
-            expected = entry.get("expected", "") or entry.get("scheduled", "")
-            if expected:
-                dt = TZ.localize(datetime.fromisoformat(expected))
-                if 0 <= (dt - now).total_seconds() <= 60:
-                    touch_trigger("_trigger_bus")
-                    break
+                    # Signal immediate refresh if any departure is ≤ 1 min away
+                    for entry in departures[:5]:
+                        expected = entry.get("expected", "") or entry.get("scheduled", "")
+                        if expected:
+                            dt = TZ.localize(datetime.fromisoformat(expected))
+                            if 0 <= (dt - now).total_seconds() <= 60:
+                                touch_trigger("_trigger_bus")
+                                break
 
-        self.border_subtitle = (
-            f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
-        )
-        self.set_loading(False)
+                station_name = cached["data"].get("name", "")
+                self.border_subtitle = (
+                    f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
+                )
+                self.set_loading(False)
+
+        for line in self.query(BusLine):
+            line.refresh_data()
 
     def on_mount(self):
         self.border_title = "Bus"
@@ -159,5 +171,5 @@ class BusSchedule(Static):
     def on_click(self):
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
+        self.border_subtitle = "[dim]Refreshing...[/]"
         touch_trigger("_trigger_bus")
-        self.refresh_bus()

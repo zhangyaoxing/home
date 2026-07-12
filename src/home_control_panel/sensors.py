@@ -1,4 +1,5 @@
 import logging
+import time
 
 from rich.markup import escape
 from textual.app import ComposeResult
@@ -10,6 +11,7 @@ from home_control_panel.libs.cache import (
     cache_mtime,
     format_cache_time,
     read_cache,
+    touch_trigger,
 )
 from home_control_panel.libs.utils import config
 
@@ -171,3 +173,9 @@ class Sensors(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_data()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        self.border_subtitle = "[dim]Refreshing...[/]"
+        touch_trigger("_trigger_sensors")

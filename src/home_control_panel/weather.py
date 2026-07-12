@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime as dt, timedelta
 
 from rich.text import Text
@@ -10,6 +11,7 @@ from home_control_panel.libs.cache import (
     cache_mtime,
     format_cache_time,
     read_cache,
+    touch_trigger,
 )
 from home_control_panel.libs.utils import load_config
 
@@ -139,6 +141,12 @@ class WeatherNext(Static):
             return
         self._table.clear()
         self._table.add_row("Unavailable", "Weather service unavailable")
+
+    def on_click(self):
+        if time.time() - cache_mtime("weather.json") < 60:
+            return
+        self.border_subtitle = "[dim]Refreshing...[/]"
+        touch_trigger("_trigger_weather")
 
 
 class WeatherMetricChart(Canvas):
@@ -408,6 +416,7 @@ class Weather(Static):
     _weather_chart: WeatherChart | None = None
     _last_error = False
     _cache_mtime = 0
+    _data_signature = None
 
     def _check_cache(self):
         mtime = cache_mtime(self.CACHE_FILE)
@@ -427,15 +436,44 @@ class Weather(Static):
             return
 
         data = cached["data"]
-        self._last_error = False
+        cc = data.get("currentConditions", {})
+        sig = (
+            (cc.get("temp"), cc.get("humidity"), cc.get("windspeed"),
+             cc.get("windgust"), cc.get("winddir"), cc.get("cloudcover"),
+             cc.get("visibility"), cc.get("precip_probability"),
+             cc.get("frozen_probability"), cc.get("thunderstorm_probability"),
+             cc.get("conditions")),
+            tuple(
+                (d.get("date"), d.get("temp"), d.get("tempmin"), d.get("tempmax"),
+                 d.get("humidity"), d.get("windspeed"), d.get("windgust"),
+                 d.get("winddir"), d.get("cloudcover"), d.get("visibility"),
+                 d.get("precip_probability"), d.get("frozen_probability"),
+                 d.get("thunderstorm_probability"), d.get("conditions"))
+                for d in data.get("days", [])
+            ),
+            tuple(
+                tuple(h.get("temp", [])) + tuple(h.get("humidity", []))
+                + tuple(h.get("precip_probability", []))
+                + tuple(h.get("frozen_probability", []))
+                + tuple(h.get("thunderstorm_probability", []))
+                for h in data.get("hourlyDetails", [])
+            ),
+        )
+
+        if sig != self._data_signature:
+            self._data_signature = sig
+            self._last_error = False
+            if self._weather_next is not None:
+                self._weather_next.refresh_data(data)
+            if self._weather_chart is not None:
+                self._weather_chart.refresh_data(data.get("hourlyDetails"))
+            self._check_probability_warning(data)
+
         ts = f"[dim]Updated {format_cache_time(cached)}[/]"
         if self._weather_next is not None:
-            self._weather_next.refresh_data(data)
             self._weather_next.border_subtitle = ts
         if self._weather_chart is not None:
-            self._weather_chart.refresh_data(data.get("hourlyDetails"))
             self._weather_chart.border_subtitle = ts
-        self._check_probability_warning(data)
         self.set_loading(False)
 
     def _check_probability_warning(self, data):
@@ -467,9 +505,9 @@ class Weather(Static):
         for hourly in hourly_details:
             datetimes = hourly.get("datetimes", [])
             values = hourly.get(key, [])
-            for time, value in zip(datetimes, values):
+            for time_str, value in zip(datetimes, values):
                 try:
-                    forecast_time = dt.fromisoformat(time)
+                    forecast_time = dt.fromisoformat(time_str)
                 except ValueError:
                     continue
                 now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now()
@@ -492,3 +530,12 @@ class Weather(Static):
     def on_cache_changed(self, event: CacheChanged):
         if event.cache_name == self.CACHE_FILE:
             self.refresh_data()
+
+    def on_click(self):
+        if time.time() - cache_mtime(self.CACHE_FILE) < 60:
+            return
+        if self._weather_next is not None:
+            self._weather_next.border_subtitle = "[dim]Refreshing...[/]"
+        if self._weather_chart is not None:
+            self._weather_chart.border_subtitle = "[dim]Refreshing...[/]"
+        touch_trigger("_trigger_weather")
