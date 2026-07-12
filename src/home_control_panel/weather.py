@@ -5,7 +5,12 @@ from rich.text import Text
 from textual.widgets import DataTable, Static
 from textual_hires_canvas import Canvas, HiResMode, TextAlign
 
-from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
+from home_control_panel.libs.cache import (
+    CacheChanged,
+    cache_mtime,
+    format_cache_time,
+    read_cache,
+)
 from home_control_panel.libs.utils import load_config
 
 logger = logging.getLogger(__name__)
@@ -483,3 +488,7 @@ class Weather(Static):
     def refresh_data(self):
         self._cache_mtime = 0
         self._check_cache()
+
+    def on_cache_changed(self, event: CacheChanged):
+        if event.cache_name == self.CACHE_FILE:
+            self.refresh_data()

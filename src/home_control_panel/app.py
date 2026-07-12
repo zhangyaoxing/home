@@ -9,6 +9,7 @@ from textual.app import App
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 
+from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config
 from home_control_panel.bus import BusSchedule
 from home_control_panel.metro import MetroSchedule
@@ -32,9 +33,17 @@ class HomeApp(App):
         self.warning_manager = WarningManager(
             self, config["warningInterval"],
         )
+        self._watcher = FileWatcher(self)
 
     def on_mount(self):
         self.title = config["title"]
+        self._watcher.watch("train_schedule.json")
+        self._watcher.watch("train_messages.json")
+        self._watcher.watch("metro_schedule.json")
+        self._watcher.watch("bus_schedule.json")
+        self._watcher.watch("sensors.json")
+        self._watcher.watch("weather.json")
+        self._watcher.start()
 
     def compose(self):
         # yield Header(show_clock=True)

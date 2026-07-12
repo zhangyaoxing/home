@@ -9,6 +9,7 @@ from textual.widgets import Static
 
 from home_control_panel.common_widgets import ScrollingLabel
 from home_control_panel.libs.cache import (
+    CacheChanged,
     cache_mtime,
     format_cache_time,
     read_cache,
@@ -154,3 +155,7 @@ class MetroSchedule(Static):
     def refresh_metro(self):
         self._cache_mtime = 0
         self._check_cache()
+
+    def on_cache_changed(self, event: CacheChanged):
+        if event.cache_name == self.CACHE_FILE:
+            self.refresh_metro()

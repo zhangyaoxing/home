@@ -5,7 +5,12 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Static
 
-from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_cache
+from home_control_panel.libs.cache import (
+    CacheChanged,
+    cache_mtime,
+    format_cache_time,
+    read_cache,
+)
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
@@ -162,3 +167,7 @@ class Sensors(Static):
     def refresh_data(self):
         self._cache_mtime = 0
         self._check_cache()
+
+    def on_cache_changed(self, event: CacheChanged):
+        if event.cache_name == self.CACHE_FILE:
+            self.refresh_data()
