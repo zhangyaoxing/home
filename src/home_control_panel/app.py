@@ -10,6 +10,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal
 
 from home_control_panel.libs.utils import config
+from home_control_panel.bus import BusSchedule
 from home_control_panel.metro import MetroSchedule
 from home_control_panel.sensors import Sensors
 from home_control_panel.train import TrainSchedule, TrainStationMessage
@@ -40,6 +41,7 @@ class HomeApp(App):
         yield TrainSchedule(id="schedule")
         with Horizontal(id="right_panel"):
             yield TrainStationMessage(id="message")
+            yield BusSchedule(id="bus")
             yield MetroSchedule(id="metro")
         yield WeatherNext(id="weather_next")
         yield Sensors(id="sensors")
@@ -54,6 +56,7 @@ class HomeApp(App):
         self.query_one("#message", TrainStationMessage).refresh_message()
         self.query_one("#schedule", TrainSchedule).refresh_schedule()
         self.query_one("#metro", MetroSchedule).refresh_metro()
+        self.query_one("#bus", BusSchedule).refresh_bus()
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
 

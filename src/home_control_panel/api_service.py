@@ -23,7 +23,7 @@ from home_control_panel.libs.traffic_api import (  # noqa: E402
     summarize_notice,
     translate_texts,
 )
-from home_control_panel.libs.sl_api import api_metro_departures  # noqa: E402
+from home_control_panel.libs.sl_api import api_bus_departures, api_metro_departures  # noqa: E402
 from home_control_panel.libs.utils import config  # noqa: E402
 from home_control_panel.libs.weather_api import api_weather  # noqa: E402
 
@@ -248,6 +248,47 @@ def _fetch_metro(state, last_call):
     return now
 
 
+def _fetch_bus(state, last_call):
+    if is_freq_throttled(last_call):
+        return last_call
+    error, result = api_bus_departures()
+    now = datetime.now()
+    if error or result is None:
+        logger.warning("Failed to fetch bus departures: %s", error)
+        return last_call
+
+    departures = result.get("departures", [])
+    station_name = result.get("name", "")
+    old_translations = state["translations"]
+    new_texts = []
+    for d in departures:
+        new_texts.extend(d.get("deviations", []))
+
+    untranslated = [t for t in new_texts if t not in old_translations]
+    if untranslated:
+        translated = translate_texts(untranslated)
+        if translated is not None:
+            old_translations.update(translated)
+            logger.info("Translated %d new bus texts", len(translated))
+
+    for d in departures:
+        raw = d.get("deviations", [])
+        d["deviations_tr"] = {t: old_translations.get(t, t) for t in raw}
+
+    write_cache(
+        "bus_schedule.json",
+        {
+            "timestamp": now.isoformat(),
+            "data": {
+                "name": station_name,
+                "departures": departures,
+            },
+        },
+    )
+    logger.info("Bus schedule updated: %d departures", len(departures))
+    return now
+
+
 def main():
     logger.info("API service starting...")
 
@@ -257,9 +298,11 @@ def main():
     last_messages = datetime.min
     last_schedule = datetime.min
     last_metro = datetime.min
+    last_bus = datetime.min
     last_msg_call = datetime.min
     last_sched_call = datetime.min
     last_metro_call = datetime.min
+    last_bus_call = datetime.min
     last_stations_check = (
         datetime.min
         if state.get("stations_updated") is None
@@ -271,6 +314,7 @@ def main():
     message_interval = config["train"]["message"]["updateIntervalMin"] * 60
     schedule_interval = config["train"]["apiFreqCheck"]
     metro_interval = config["train"]["apiFreqCheck"]
+    bus_interval = config["train"]["apiFreqCheck"]
     station_interval = config["train"]["stationUpdateInterval"]
 
     while True:
@@ -308,6 +352,13 @@ def main():
             if result != last_metro_call:
                 last_metro_call = result
             last_metro = now
+            _save_state(state)
+
+        if (now - last_bus).total_seconds() >= bus_interval:
+            result = _fetch_bus(state, last_bus_call)
+            if result != last_bus_call:
+                last_bus_call = result
+            last_bus = now
             _save_state(state)
 
         time.sleep(1)

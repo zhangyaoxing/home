@@ -87,6 +87,13 @@ Screen {
     padding: 1 1 0 1;
 }
 
+#bus {
+    width: 1fr;
+    height: 100%;
+    border: solid greenyellow;
+    overflow: hidden;
+}
+
 #metro {
     width: 1fr;
     height: 100%;

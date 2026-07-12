@@ -9,19 +9,22 @@ config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
 
 
-def api_metro_departures():
-    """Fetch real-time metro departures from SL Transport API.
-
-    Returns (error, departures_list) where departures_list contains
-    dicts with keys: line, destination, display, scheduled, expected,
-    deviations, transport_mode.
-    """
+def api_bus_departures():
+    """Fetch real-time bus departures from SL Transport API."""
     key = config.get("slKey")
     if not key:
         return Exception("slKey not configured"), None
 
-    url = f"{config['sl']['apiUrl']}/sites/{config['sl']['siteId']}/departures"
-    params = {"timeWindow": config["sl"].get("timeWindow", 120), "transport": "METRO"}
+    return _fetch_sl_departures(
+        config["sl"]["busSiteId"],
+        key,
+        "BUS",
+    )
+
+
+def _fetch_sl_departures(site_id, key, transport):
+    url = f"{config['sl']['apiUrl']}/sites/{site_id}/departures"
+    params = {"timeWindow": config["sl"].get("timeWindow", 120), "transport": transport}
     try:
         result = requests.get(
             url,
@@ -35,11 +38,9 @@ def api_metro_departures():
 
         data = result.json()
         departures = data.get("departures", [])
-        # Extract station name from first departure's stop_area
         station_name = ""
         if departures:
             station_name = departures[0].get("stop_area", {}).get("name", "")
-        # Simplify structure
         filtered = []
         for d in departures:
             line = d.get("line", {})
@@ -52,10 +53,26 @@ def api_metro_departures():
                 "expected": d.get("expected", ""),
                 "state": d.get("state", ""),
                 "deviations": [m for m in deviation_texts if m],
-                "transport_mode": line.get("transport_mode", ""),
-                "group_of_lines": line.get("group_of_lines", ""),
             })
         return None, {"name": station_name, "departures": filtered}
     except (requests.RequestException, ValueError) as error:
         logger.error("SL API exception: %s", error)
         return error, None
+
+
+def api_metro_departures():
+    """Fetch real-time metro departures from SL Transport API.
+
+    Returns (error, departures_list) where departures_list contains
+    dicts with keys: line, destination, display, scheduled, expected,
+    deviations, transport_mode.
+    """
+    key = config.get("slKey")
+    if not key:
+        return Exception("slKey not configured"), None
+
+    return _fetch_sl_departures(
+        config["sl"]["siteId"],
+        key,
+        "METRO",
+    )
