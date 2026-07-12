@@ -169,7 +169,15 @@ def _fetch_messages(state, last_train_call):
 
     write_cache(
         "train_messages.json",
-        {"timestamp": now.isoformat(), "data": {"messages": enriched}},
+        {
+            "timestamp": now.isoformat(),
+            "data": {
+                "station_name": state["station_names"].get(
+                    config["train"]["stationCode"], ""
+                ),
+                "messages": enriched,
+            },
+        },
     )
     logger.info(
         "Train messages updated: %d total, %d new summaries",

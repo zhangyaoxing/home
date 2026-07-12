@@ -7,7 +7,7 @@ load_dotenv()
 
 from textual.app import App
 from textual.binding import Binding
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 
 from home_control_panel.libs.utils import config
 from home_control_panel.bus import BusSchedule
@@ -41,8 +41,9 @@ class HomeApp(App):
         yield TrainSchedule(id="schedule")
         with Horizontal(id="right_panel"):
             yield TrainStationMessage(id="message")
-            yield BusSchedule(id="bus")
-            yield MetroSchedule(id="metro")
+            with Vertical(id="transit"):
+                yield MetroSchedule(id="metro")
+                yield BusSchedule(id="bus")
         yield WeatherNext(id="weather_next")
         yield Sensors(id="sensors")
         yield WeatherChart(id="weather_chart")

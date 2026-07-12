@@ -49,6 +49,7 @@ class TrainStationMessage(Static):
             return
 
         messages = cached["data"]["messages"]
+        station_name = cached["data"].get("station_name", "")
         messages = sorted(
             messages,
             key=lambda m: m["raw"].get("Status") != "Lag",
@@ -68,7 +69,7 @@ class TrainStationMessage(Static):
             self.mount(Rule())
 
         self.set_loading(False)
-        self.border_subtitle = f"[dim]Updated {format_cache_time(cached)}[/]"
+        self.border_subtitle = f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
 
     def on_mount(self):
         self.border_title = "Station Notices"
@@ -230,7 +231,7 @@ class TrainSchedule(Static):
         self.set_loading(False)
 
     def on_mount(self):
-        self.border_title = "Train Schedules"
+        self.border_title = "Train"
         self.set_loading(True)
         self._check_cache()
         self.set_interval(5, self._check_cache)
