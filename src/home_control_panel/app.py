@@ -10,7 +10,7 @@ from textual.binding import Binding
 
 from home_control_panel.libs.utils import config
 from home_control_panel.sensors import Sensors
-from home_control_panel.train import TrainSchedule, TrainStationMessage
+from home_control_panel.train import MetroSchedule, TrainSchedule, TrainStationMessage
 from home_control_panel.warning import WarningManager
 from home_control_panel.weather import Weather, WeatherChart, WeatherNext
 
@@ -27,7 +27,7 @@ class HomeApp(App):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.warning_manager = WarningManager(
-            self, config["humidityWarningInterval"],
+            self, config["warningInterval"],
         )
 
     def on_mount(self):
@@ -37,6 +37,7 @@ class HomeApp(App):
         # yield Header(show_clock=True)
         yield TrainSchedule(id="schedule")
         yield TrainStationMessage(id="message")
+        yield MetroSchedule(id="metro")
         yield WeatherNext(id="weather_next")
         yield Sensors(id="sensors")
         yield WeatherChart(id="weather_chart")
@@ -49,6 +50,7 @@ class HomeApp(App):
     def action_refresh(self):
         self.query_one("#message", TrainStationMessage).refresh_message()
         self.query_one("#schedule", TrainSchedule).refresh_schedule()
+        self.query_one("#metro", MetroSchedule).refresh_metro()
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
 

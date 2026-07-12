@@ -8,7 +8,7 @@ config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
 
 # TODO: Make the request async.
-url = config["trainApiUrl"]
+url = config["train"]["apiUrl"]
 
 # Check whether the call to API is throttled.
 # True: Yes (Shouldn't call API)
@@ -18,7 +18,7 @@ def is_freq_throttled(last_call_time):
     hour = now.hour
     cfg = next(
         cfg
-        for cfg in config["apiFreqControl"]
+        for cfg in config["train"]["apiFreqControl"]
         if cfg["from"] <= hour < cfg["to"]
     )
     interval = cfg["intervalMin"]
@@ -70,7 +70,7 @@ def api_train_message():
     <INCLUDE>FreeText</INCLUDE>
     <INCLUDE>Status</INCLUDE>
     <INCLUDE>ActiveDays</INCLUDE>
-  </QUERY>""".format(code=config["myStationCode"])
+  </QUERY>""".format(code=config["train"]["stationCode"])
     return api_request(reqBody)
 
 def api_train_announcement():
@@ -98,7 +98,38 @@ def api_train_announcement():
       <INCLUDE>ToLocation</INCLUDE>
       <INCLUDE>Deviation</INCLUDE>
       <INCLUDE>OtherInformation</INCLUDE>
-  </QUERY>""".format(code=config["myStationCode"])
+  </QUERY>""".format(code=config["train"]["stationCode"])
+    return api_request(reqBody)
+
+
+def api_metro_announcement():
+    reqBody = """<QUERY objecttype='TrainAnnouncement'
+          orderby='AdvertisedTimeAtLocation' schemaversion='1' limit="{limit}">
+      <FILTER>
+      <AND>
+          <OR>
+              <AND>
+                  <GT name='AdvertisedTimeAtLocation'
+                              value='$dateadd(-00:05:00)' />
+                  <LT name='AdvertisedTimeAtLocation'
+                              value='$dateadd(12:00:00)' />
+              </AND>
+              <GT name='EstimatedTimeAtLocation' value='$now' />
+          </OR>
+          <EQ name='LocationSignature' value='{code}' />
+          <EQ name='ActivityType' value='Avgang' />
+      </AND>
+      </FILTER>
+      <INCLUDE>AdvertisedTimeAtLocation</INCLUDE>
+      <INCLUDE>TrackAtLocation</INCLUDE>
+      <INCLUDE>FromLocation</INCLUDE>
+      <INCLUDE>ToLocation</INCLUDE>
+      <INCLUDE>ProductInformation</INCLUDE>
+      <INCLUDE>Deviation</INCLUDE>
+  </QUERY>""".format(
+        code=config["sl"]["metroStationCode"],
+        limit=config["sl"].get("metroLimit", 8),
+    )
     return api_request(reqBody)
 
 

@@ -4,18 +4,18 @@ from home_control_panel.libs.utils import config
 class ScrollingLabel(Label):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._position = config["message"]["margin"]
+        self._position = config["train"]["message"]["margin"]
         self._last_offset = 0
         self._last_parent_width = None
         self._last_text_width = None
 
     def reset_scroll(self):
-        self._position = config["message"]["margin"]
+        self._position = config["train"]["message"]["margin"]
         self.styles.offset = 0, 0
         self._last_offset = 0
 
     def scroll(self):
-        margin = config["message"]["margin"]
+        margin = config["train"]["message"]["margin"]
         parent = self.parent
         if parent is None:
             return
@@ -40,7 +40,7 @@ class ScrollingLabel(Label):
                 self._last_offset = 0
 
     def on_mount(self):
-        self.set_interval(config["message"]["scrollSpeed"], self.scroll)
+        self.set_interval(config["train"]["message"]["scrollSpeed"], self.scroll)
 
     def on_resize(self):
         self.reset_scroll()

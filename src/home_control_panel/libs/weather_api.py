@@ -11,11 +11,6 @@ logger = logging.getLogger(__name__)
 config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
 
-SMHI_URL = (
-    "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1"
-    "/geotype/point/lon/{lon}/lat/{lat}/data.json"
-)
-
 WSYMB2_MAP = {
     1: "Clear",
     2: "Nearly clear",
@@ -240,7 +235,7 @@ def _build_current(entry):
 
 
 def api_weather():
-    url = SMHI_URL.format(lon=config["weatherLon"], lat=config["weatherLat"])
+    url = config["weather"]["apiUrl"].format(lon=config["weather"]["lon"], lat=config["weather"]["lat"])
     try:
         result = requests.get(url, timeout=REQUEST_TIMEOUT)
         if result.status_code < 200 or result.status_code >= 300:

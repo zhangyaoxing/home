@@ -6,7 +6,6 @@ WARNING_CLASSES = {
 
 
 class WarningManager:
-    BLINK_INTERVAL = 1
     TARGETS = {
         "sensors": "#sensors",
         "weather": "#weather_next",
@@ -14,7 +13,7 @@ class WarningManager:
 
     def __init__(self, app, interval):
         self._app = app
-        self._interval = self.BLINK_INTERVAL
+        self._interval = interval
         self._sources = {}
         self._timer = None
         self._visible = False

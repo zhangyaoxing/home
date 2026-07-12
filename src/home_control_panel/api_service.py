@@ -16,6 +16,7 @@ load_dotenv()  # noqa: E402
 from home_control_panel.libs.cache import read_cache, write_cache  # noqa: E402
 from home_control_panel.libs.ha_api import api_ha  # noqa: E402
 from home_control_panel.libs.traffic_api import (  # noqa: E402
+    api_metro_announcement,
     api_train_announcement,
     api_train_message,
     api_train_stations,
@@ -206,6 +207,55 @@ def _fetch_weather():
     )
 
 
+def _fetch_metro(state, last_call):
+    if is_freq_throttled(last_call):
+        return last_call
+    error, data = api_metro_announcement()
+    now = datetime.now()
+    if error or not data:
+        logger.warning("Failed to fetch metro schedule: %s", error)
+        return last_call
+
+    announcements = data["RESPONSE"]["RESULT"][0].get("TrainAnnouncement", [])
+    old_translations = state["translations"]
+
+    new_texts = []
+    for a in announcements:
+        for raw in _as_list(a.get("Deviation")):
+            t = _normalize_message(raw)
+            if t:
+                new_texts.append(t)
+
+    untranslated = [t for t in new_texts if t not in old_translations]
+    if untranslated:
+        translated = translate_texts(untranslated)
+        if translated is not None:
+            old_translations.update(translated)
+            logger.info("Translated %d new metro texts", len(translated))
+
+    for a in announcements:
+        raw = [_normalize_message(t) for t in _as_list(a.get("Deviation")) if t]
+        a["Deviation_tr"] = {t: old_translations.get(t, t) for t in raw}
+        # Extract line number from ProductInformation
+        products = a.get("ProductInformation", [])
+        if products:
+            line = products[0].get("DisplayName") or products[0].get("Description")
+            a["Line"] = line
+
+    write_cache(
+        "metro_schedule.json",
+        {
+            "timestamp": now.isoformat(),
+            "data": {
+                "announcements": announcements,
+                "station_names": state.get("station_names", {}),
+            },
+        },
+    )
+    logger.info("Metro schedule updated: %d announcements", len(announcements))
+    return now
+
+
 def main():
     logger.info("API service starting...")
 
@@ -214,19 +264,22 @@ def main():
     last_weather = datetime.min
     last_messages = datetime.min
     last_schedule = datetime.min
+    last_metro = datetime.min
     last_msg_call = datetime.min
     last_sched_call = datetime.min
+    last_metro_call = datetime.min
     last_stations_check = (
         datetime.min
         if state.get("stations_updated") is None
         else datetime.fromisoformat(state["stations_updated"])
     )
 
-    sensor_interval = config["sensorRefreshInterval"]
-    weather_interval = config["weatherRefreshInterval"]
-    message_interval = config["message"]["updateIntervalMin"] * 60
-    schedule_interval = config["apiFreqCheck"]
-    station_interval = config["stationUpdateInterval"]
+    sensor_interval = config["homeassistant"]["refreshInterval"]
+    weather_interval = config["weather"]["refreshInterval"]
+    message_interval = config["train"]["message"]["updateIntervalMin"] * 60
+    schedule_interval = config["train"]["apiFreqCheck"]
+    metro_interval = config["train"]["apiFreqCheck"]
+    station_interval = config["train"]["stationUpdateInterval"]
 
     while True:
         now = datetime.now()
@@ -256,6 +309,13 @@ def main():
             if result != last_sched_call:
                 last_sched_call = result
             last_schedule = now
+            _save_state(state)
+
+        if (now - last_metro).total_seconds() >= metro_interval:
+            result = _fetch_metro(state, last_metro_call)
+            if result != last_metro_call:
+                last_metro_call = result
+            last_metro = now
             _save_state(state)
 
         time.sleep(1)

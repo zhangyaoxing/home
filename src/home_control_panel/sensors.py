@@ -9,12 +9,12 @@ from home_control_panel.libs.cache import cache_mtime, format_cache_time, read_c
 from home_control_panel.libs.utils import config
 
 logger = logging.getLogger(__name__)
-HUMIDITY_ENTITY_IDS = set(config["sensors"]["hum"])
-PLANT_HUMIDITY_ENTITY_IDS = set(config["sensors"]["plant_hum"])
+HUMIDITY_ENTITY_IDS = set(config["homeassistant"]["sensors"]["hum"])
+PLANT_HUMIDITY_ENTITY_IDS = set(config["homeassistant"]["sensors"]["plant_hum"])
 
 
 def low_humidity_sensors(data):
-    thresholds = config["humidityWarningThreshold"]
+    thresholds = config["homeassistant"]["humidityWarningThreshold"]
     low_sensors = []
     for sensor in data["sensors"]:
         if sensor["entity_id"] not in HUMIDITY_ENTITY_IDS:
@@ -33,7 +33,7 @@ def low_humidity_sensors(data):
 
 
 def _plant_hum_low(data):
-    thresholds = config["plantHumWarningThreshold"]
+    thresholds = config["homeassistant"]["plantHumWarningThreshold"]
     low = []
     for sensor in data["sensors"]:
         if sensor["entity_id"] not in PLANT_HUMIDITY_ENTITY_IDS:

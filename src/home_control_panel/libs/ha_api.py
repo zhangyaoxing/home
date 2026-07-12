@@ -16,7 +16,7 @@ def api_ha():
     global _cached_at, _cached_data
     if (
         _cached_data is not None
-        and monotonic() - _cached_at < config["sensorRefreshInterval"]
+        and monotonic() - _cached_at < config["homeassistant"]["refreshInterval"]
     ):
         return None, _cached_data
 
@@ -24,12 +24,12 @@ def api_ha():
         "Authorization": f'Bearer {config["haKey"]}',
         "Content-Type": "application/json",
     }
-    data = {sensor_type: [] for sensor_type in config["sensors"]}
+    data = {sensor_type: [] for sensor_type in config["homeassistant"]["sensors"]}
     data["sensors"] = []
 
     try:
         result = requests.get(
-            f'{config["haApiUrl"]}/api/states',
+            f'{config["homeassistant"]["apiUrl"]}/api/states',
             headers=headers,
             timeout=REQUEST_TIMEOUT,
         )
@@ -51,7 +51,7 @@ def api_ha():
         for state in states_json
         if "entity_id" in state
     }
-    for sensor_type, entities in config["sensors"].items():
+    for sensor_type, entities in config["homeassistant"]["sensors"].items():
         for entity_id in entities:
             state_json = states_by_id.get(entity_id)
             if state_json is None:

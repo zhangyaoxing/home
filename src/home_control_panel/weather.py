@@ -11,7 +11,7 @@ from home_control_panel.libs.utils import load_config
 logger = logging.getLogger(__name__)
 config = load_config()
 WIND_DIRECTIONS = ("↓", "↙", "←", "↖", "↑", "↗", "→", "↘")
-PROB_THRESHOLDS = config["probabilityWarningThreshold"]
+PROB_THRESHOLDS = config["weather"]["probabilityWarningThreshold"]
 PROB_WARNING_LOOKAHEAD_HOURS = 6
 CHART_AXIS_STYLE = "#666666"
 
