@@ -48,6 +48,7 @@ def _fetch_sl_departures(site_id, key, transport):
             filtered.append({
                 "line": line.get("designation", ""),
                 "destination": d.get("destination", ""),
+                "platform": d.get("stop_point", {}).get("designation", ""),
                 "display": d.get("display", ""),
                 "scheduled": d.get("scheduled", ""),
                 "expected": d.get("expected", ""),

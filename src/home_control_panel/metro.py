@@ -37,6 +37,7 @@ class MetroLine(Horizontal):
         entry = self.entry
         line = entry.get("line", "")
         dest = entry.get("destination", "")
+        platform = entry.get("platform", "")
         expected = entry.get("expected", "") or entry.get("scheduled", "")
         cancelled = entry.get("state") == "CANCELLED"
 
@@ -57,7 +58,7 @@ class MetroLine(Horizontal):
             time_display = mins
 
         self.query_one(".schedule-route", Static).update(route)
-        self.query_one(".schedule-track", Static).update("")
+        self.query_one(".schedule-track", Static).update(platform)
         self.query_one(".schedule-time", Static).update(time_display)
 
     def on_mount(self):
@@ -117,7 +118,7 @@ class MetroSchedule(Static):
         self.mount(
             Horizontal(
                 Static("Line", classes="schedule-route"),
-                Static("", classes="schedule-track"),
+                Static("Plat", classes="schedule-track"),
                 Static("Time", classes="schedule-time"),
                 classes="schedule-header",
             )
