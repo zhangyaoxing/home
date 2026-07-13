@@ -178,11 +178,11 @@ LightCheckbox.light-on .toggle--label {
 
 LightCheckbox.light-off {
     background: #1a1a1a;
-    color: #666666;
+    color: #aaaaaa;
 }
 
 LightCheckbox.light-off .toggle--label {
-    color: #666666;
+    color: #aaaaaa;
 }
 
 Checkbox {
