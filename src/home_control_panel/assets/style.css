@@ -167,6 +167,34 @@ SceneButton {
     width: 100%;
 }
 
+#scene-delay-row {
+    dock: bottom;
+    layout: horizontal;
+    height: 1;
+    margin-top: 1;
+}
+
+#scene-delay-label {
+    width: auto;
+    height: 1;
+    padding: 0 1 0 0;
+    color: #aaaaaa;
+}
+
+#scene-delay {
+    border: none;
+    height: 1;
+    width: 1fr;
+    layout: horizontal;
+}
+
+#scene-delay RadioButton {
+    width: auto;
+    height: 1;
+    padding: 0;
+    margin: 0;
+}
+
 LightCheckbox.light-on {
     background: #4a3a00;
     color: #FFD700;

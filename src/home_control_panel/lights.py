@@ -1,10 +1,11 @@
 import logging
+import time
 from datetime import datetime
 
 from rich.markup import escape
 from textual.app import ComposeResult
-from textual.containers import Vertical
-from textual.widgets import Button, Checkbox, Static
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Button, Checkbox, RadioSet, RadioButton, Static
 from textual import work
 from textual.message import Message
 
@@ -81,27 +82,51 @@ class SceneButton(Button):
         super().__init__(escape(scene["name"]), *args, **kwargs)
         self.entity_id = scene["entity_id"]
 
-    def on_button_pressed(self, event: Button.Pressed):
-        self.run_worker(
-            lambda: api_ha_activate_scene(self.entity_id),
-            thread=True,
-        )
-        self.post_message(RefreshRequest())
-
 
 class SceneSection(Vertical):
     """A bordered section showing scenes as clickable buttons."""
 
+    _DELAY_MAP = {"delay-now": 0, "delay-30s": 30, "delay-60s": 60}
+
     def __init__(self, scenes_data, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.scenes_data = scenes_data
+        self._delay = 0
 
     def compose(self) -> ComposeResult:
         for scene in self.scenes_data:
             yield SceneButton(scene)
+        with Horizontal(id="scene-delay-row"):
+            yield Static("Delay", id="scene-delay-label")
+            yield RadioSet(
+                RadioButton("Now", value=True, id="delay-now"),
+                RadioButton("30s", id="delay-30s"),
+                RadioButton("60s", id="delay-60s"),
+                id="scene-delay",
+            )
 
     def on_mount(self):
         self.border_title = "Scenes"
+        self.query_one("#scene-delay", RadioSet).can_focus = False
+
+    def on_radio_set_changed(self, event: RadioSet.Changed):
+        self._delay = self._DELAY_MAP.get(event.pressed.id, 0)
+
+    @work(thread=True)
+    def _activate_scene(self, entity_id: str, delay: int):
+        if delay > 0:
+            self.app.call_from_thread(
+                setattr, self, "border_subtitle", f"[dim]In {delay}s...[/]"
+            )
+            time.sleep(delay)
+        api_ha_activate_scene(entity_id)
+        self.app.call_from_thread(setattr, self, "border_subtitle", "")
+        self.app.call_from_thread(self.post_message, RefreshRequest())
+
+    def on_button_pressed(self, event: Button.Pressed):
+        if not isinstance(event.button, SceneButton):
+            return
+        self._activate_scene(event.button.entity_id, self._delay)
 
 
 class RefreshRequest(Message):
