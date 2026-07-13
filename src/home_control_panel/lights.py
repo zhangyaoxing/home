@@ -172,8 +172,6 @@ class Lights(Static):
 
         self._last_fetch_at = datetime.now()
         self.set_loading(False)
-        ts = self._last_fetch_at.strftime("%H:%M")
-        self.border_subtitle = f"[dim]Updated {ts}[/]"
 
     @work(thread=True, exclusive=True)
     def _fetch(self) -> None:
@@ -197,12 +195,6 @@ class Lights(Static):
         self.set_interval(self._fetch_interval, self._fetch)
 
     def refresh_lights(self):
-        self._fetch()
-
-    def on_click(self, event):
-        if event.widget is not self:
-            return
-        self.border_subtitle = "[dim]Refreshing...[/]"
         self._fetch()
 
     def on_refresh_request(self, event: RefreshRequest):
