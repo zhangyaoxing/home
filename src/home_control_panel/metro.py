@@ -143,8 +143,6 @@ class MetroSchedule(Static):
 
                 if sig != self._data_signature:
                     self._data_signature = sig
-                    station_name = cached["data"].get("name", "")
-                    now = datetime.now(tz=pytz.UTC)
 
                     self.remove_children()
                     self.mount(
@@ -156,11 +154,6 @@ class MetroSchedule(Static):
                         )
                     )
                     for entry in departures[:5]:
-                        expected = entry.get("expected", "") or entry.get("scheduled", "")
-                        if expected:
-                            dt = TZ.localize(datetime.fromisoformat(expected))
-                            if now > dt:
-                                continue
                         self.mount(MetroEntry(entry))
 
                     for line in self.query(MetroLine):
@@ -174,10 +167,7 @@ class MetroSchedule(Static):
 
         else:
             for line in list(self.query(MetroLine)):
-                if line.is_past():
-                    line.parent.remove()
-                else:
-                    line.refresh_time()
+                line.refresh_time()
 
     def on_mount(self):
         self.border_title = "Metro"

@@ -47,7 +47,7 @@
     "apiUrl": "https://transport.integration.sl.se/v1",
     "metroSiteId": 9116,
     "busSiteId": 1065,
-    "refreshInterval": 180,
+    "refreshInterval": 60,
     "timeWindow": 120,
     "metroLineColors": {
       "10": "#0055A4",
