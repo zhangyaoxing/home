@@ -185,6 +185,8 @@ SceneButton {
     height: 1;
     padding: 0;
     margin: 0;
+    color: #aaaaaa;
+    text-opacity: 100%;
 }
 
 LightCheckbox.light-on {
