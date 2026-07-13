@@ -97,7 +97,6 @@ class SceneSection(Vertical):
         for scene in self.scenes_data:
             yield SceneButton(scene)
         with Horizontal(id="scene-delay-row"):
-            yield Static("Delay", id="scene-delay-label")
             yield RadioSet(
                 RadioButton("Now", value=True, id="delay-now"),
                 RadioButton("30s", id="delay-30s"),
