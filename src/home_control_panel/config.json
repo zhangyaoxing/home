@@ -110,7 +110,8 @@
     },
     "areas": {
       "Work Corner": [
-        "light.desk_light_3"
+        "light.desk_light_3",
+        "switch.ou_biao_zhi_neng_ji_liang_cha_zuo_2_socket_1"
       ],
       "Living Room": [
         "switch.ceiling_lamp_switch",
