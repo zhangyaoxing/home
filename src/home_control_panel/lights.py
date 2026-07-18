@@ -148,10 +148,12 @@ class SceneCountdownScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="scene-countdown-container"):
-            yield Static("[bold]Blow up the house in[/]", id="sc-title")
+            yield Static(self._big_title(), id="sc-title")
             yield Static(self._figlet_text(), id="sc-time")
-            yield Static(escape(self._scene_name), id="sc-name")
             yield Static("[dim]Esc or click outside to cancel[/]", id="sc-hint")
+
+    def _big_title(self) -> str:
+        return f"[bold cyan]Blow up the house with {escape(self._scene_name)} in[/]"
 
     def _figlet_text(self) -> str:
         raw = pyfiglet.figlet_format(
