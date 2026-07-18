@@ -112,6 +112,47 @@ NoticesScreen {
     overflow-y: auto;
 }
 
+SceneCountdownScreen {
+    layout: vertical;
+    align: center middle;
+}
+
+#scene-countdown-container {
+    width: 66%;
+    height: auto;
+    border: solid greenyellow;
+    background: $surface;
+    padding: 1 2;
+    align: center middle;
+}
+
+#sc-title {
+    content-align: center middle;
+    color: $text;
+    height: 1;
+    margin-bottom: 1;
+}
+
+#sc-name {
+    content-align: center middle;
+    text-style: bold;
+    color: cyan;
+    height: 1;
+}
+
+#sc-time {
+    height: auto;
+    content-align: center middle;
+    margin: 1 0;
+}
+
+#sc-hint {
+    content-align: center middle;
+    color: #888888;
+    height: 1;
+    margin-top: 1;
+}
+
 #transit {
     width: 1fr;
     height: 100%;

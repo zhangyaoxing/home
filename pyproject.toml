@@ -9,6 +9,7 @@ description = "A text-based home control panel."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "pyfiglet==1.0.4",
     "pytz==2025.2",
     "python-dotenv==1.2.1",
     "requests==2.32.5",
