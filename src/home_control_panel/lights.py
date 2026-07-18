@@ -123,9 +123,11 @@ class SceneSection(Vertical):
             return
         entity_id = event.button.entity_id
         if self._delay > 0:
+
             def on_done(apply):
                 if apply:
                     self._apply_scene(entity_id)
+
             self.app.push_screen(
                 SceneCountdownScreen(event.button.scene_name, self._delay),
                 on_done,
@@ -150,14 +152,21 @@ class SceneCountdownScreen(ModalScreen):
         with Vertical(id="scene-countdown-container"):
             yield Static(self._big_title(), id="sc-title")
             yield Static(self._figlet_text(), id="sc-time")
-            yield Static("[dim]Esc or click outside to cancel[/]", id="sc-hint")
+            yield Static(
+                "[dim]Esc or click outside to save the earth![/]", id="sc-hint"
+            )
 
     def _big_title(self) -> str:
-        return f"[bold cyan]Blow up the house with {escape(self._scene_name)} in[/]"
+        return (
+            f"[bold cyan]Blow up the earth with "
+            f"[underline]{escape(self._scene_name)}[/underline]"
+            f" in[/]"
+        )
 
     def _figlet_text(self) -> str:
         raw = pyfiglet.figlet_format(
-            str(self._remaining), font=self._FIGLET_FONT,
+            str(self._remaining),
+            font=self._FIGLET_FONT,
         ).rstrip("\n")
         lines = raw.split("\n")
         while lines and not lines[-1].strip():
@@ -239,11 +248,7 @@ class Lights(Static):
     def _render_data(self, data):
         rooms = data.get("rooms", [])
         scenes = data.get("scenes", [])
-        sig = tuple(
-            light["entity_id"]
-            for room in rooms
-            for light in room["lights"]
-        )
+        sig = tuple(light["entity_id"] for room in rooms for light in room["lights"])
         if sig != self._data_signature or not self._checkboxes:
             self.remove_children()
             self._checkboxes.clear()
