@@ -327,6 +327,9 @@ class NoticesScreen(ModalScreen):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cache_mtime = 0
+        self._station_name = ""
+        self._cache_label = ""
+        self._remaining = 30
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-container"):
@@ -349,15 +352,14 @@ class NoticesScreen(ModalScreen):
         messages = cached["data"].get("messages", [])
         if not messages:
             self.query_one("#modal-status", Static).update("No notices at this time.")
-            station_name = cached["data"].get("station_name", "")
-            if station_name:
-                container.border_subtitle = station_name
+            self._station_name = cached["data"].get("station_name", "")
+            self._cache_label = ""
+            self._update_subtitle()
             return
 
-        station_name = cached["data"].get("station_name", "")
-        container.border_subtitle = (
-            f"{station_name}  [dim]Updated {format_cache_time(cached)}[/]"
-        )
+        self._station_name = cached["data"].get("station_name", "")
+        self._cache_label = f"[dim]Updated {format_cache_time(cached)}[/]"
+        self._update_subtitle()
 
         messages = sorted(
             messages,
@@ -374,9 +376,29 @@ class NoticesScreen(ModalScreen):
             )
             container.mount(Rule())
 
+    def _update_subtitle(self):
+        container = self.query_one("#modal-container", Vertical)
+        parts = [f"[bold yellow]{self._remaining}s[/]"]
+        if self._station_name:
+            parts.insert(0, self._station_name)
+        if self._cache_label:
+            parts.insert(1, self._cache_label)
+        container.border_subtitle = "  ".join(parts)
+
+    def _tick(self):
+        if self._remaining <= 0:
+            return
+        self._remaining -= 1
+        if self._remaining <= 0:
+            self.dismiss()
+            return
+        self._update_subtitle()
+
     def on_mount(self):
         self._load_notices()
+        self._update_subtitle()
         self.set_interval(config["tuiRefreshInterval"], self._load_notices)
+        self.set_interval(1, self._tick)
 
     def on_click(self, event):
         modal = self.query_one("#modal-container")
