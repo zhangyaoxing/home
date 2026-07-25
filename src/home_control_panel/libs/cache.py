@@ -3,6 +3,7 @@ import os
 import tempfile
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 from textual.message import Message
@@ -45,8 +46,11 @@ def format_cache_time(cached):
         return ""
     try:
         ts = cached["timestamp"]
-        return ts[11:16] if "T" in ts else ts[:5]
-    except (KeyError, IndexError):
+        dt = datetime.fromisoformat(ts)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone()
+        return dt.strftime("%H:%M")
+    except (KeyError, IndexError, ValueError):
         return ""
 
 

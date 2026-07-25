@@ -118,7 +118,7 @@ def summarize_notice(text):
                 "Content-Type": "application/json",
             },
             json={
-                "model": "deepseek-chat",
+                "model": "deepseek-v4-pro",
                 "messages": [
                     {
                         "role": "system",
@@ -136,7 +136,15 @@ def summarize_notice(text):
             timeout=15,
         )
         result.raise_for_status()
-        return result.json()["choices"][0]["message"]["content"].strip()
+        content = result.json()["choices"][0]["message"]["content"].strip()
+        return content or text
+    except requests.exceptions.HTTPError:
+        logger.warning(
+            "DeepSeek summarization failed: HTTP %s — %s",
+            result.status_code,
+            result.text[:500],
+        )
+        return text
     except Exception:
         logger.warning("DeepSeek summarization failed", exc_info=True)
         return text

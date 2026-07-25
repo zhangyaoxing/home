@@ -5,10 +5,12 @@ import logging
 from typing import ClassVar
 
 from dotenv import load_dotenv
+
 load_dotenv()
 from textual.app import App
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
+
 from home_control_panel.bus import BusSchedule
 from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config

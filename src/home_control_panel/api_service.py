@@ -38,7 +38,7 @@ from home_control_panel.libs.weather_api import api_weather
 logger = logging.getLogger("api_service")
 
 _STATE_FILE = "_api_state.json"
-_SUMMARY_VERSION = 2
+_SUMMARY_VERSION = 4
 
 
 def _load_state():
@@ -104,6 +104,8 @@ def _fetch_stations(state):
 def _fetch_schedule(state, last_train_call):
     if is_freq_throttled(last_train_call):
         return last_train_call
+    if not state.get("station_names"):
+        _fetch_stations(state)
     error, data = api_train_announcement()
     now = datetime.now(tz=UTC)
     if error or not data:
@@ -161,6 +163,8 @@ def _fetch_schedule(state, last_train_call):
 def _fetch_messages(state, last_train_call):
     if is_freq_throttled(last_train_call):
         return last_train_call
+    if not state.get("station_names"):
+        _fetch_stations(state)
     error, data = api_train_message()
     now = datetime.now(tz=UTC)
     if error or not data:
@@ -188,7 +192,9 @@ def _fetch_messages(state, last_train_call):
     enriched = []
     for message in messages:
         text = _normalize_message(message.get("FreeText", ""))
-        digest = hashlib.md5(text.encode()).hexdigest() if text else ""
+        if not text:
+            continue
+        digest = hashlib.md5(text.encode()).hexdigest()
         enriched.append(
             {
                 "raw": message,

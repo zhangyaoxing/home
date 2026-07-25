@@ -103,7 +103,7 @@ class TrainStationMessage(Static):
             self.refresh_message()
 
     def on_click(self, event):
-        if event.widget is not self:
+        if event.widget is not self and event.y != self.region.y:
             return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
@@ -311,7 +311,7 @@ class TrainSchedule(Static):
         if event.widget.id == "notice-toggle":
             self.app.push_screen(NoticesScreen())
             return
-        if event.widget is not self:
+        if event.widget is not self and event.y != self.region.y:
             return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return

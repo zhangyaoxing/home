@@ -175,7 +175,7 @@ class Sensors(Static):
             self.refresh_data()
 
     def on_click(self, event):
-        if event.widget is not self:
+        if event.widget is not self and event.y != self.region.y:
             return
         if time.time() - cache_mtime(self.CACHE_FILE) < 60:
             return
