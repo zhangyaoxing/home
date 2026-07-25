@@ -4,7 +4,7 @@ Screen {
 
 #top_panel {
     width: 100%;
-    height: 35;
+    height: 40;
 }
 
 #train {
@@ -267,7 +267,7 @@ Checkbox > .toggle--label {
 }
 #bus {
     width: 100%;
-    height: 1fr;
+    height: 4fr;
     border: solid greenyellow;
     overflow: hidden;
 }
@@ -280,7 +280,7 @@ Checkbox > .toggle--label {
 
 #sensors {
     width: 100%;
-    height: 1fr;
+    height: 5fr;
     border: solid greenyellow;
     overflow: hidden;
     padding: 0;
