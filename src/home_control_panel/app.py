@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
+"""Home Control Panel: A textual app that displays train schedules, 
+messages, bus schedules, weather, and sensor data."""
 import logging
 from typing import ClassVar
 
 from dotenv import load_dotenv
-
 load_dotenv()
-
 from textual.app import App
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-
 from home_control_panel.bus import BusSchedule
 from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config
 from home_control_panel.lights import Lights
-from home_control_panel.metro import MetroSchedule
 from home_control_panel.sensors import Sensors
 from home_control_panel.train import TrainSchedule, TrainStationMessage
 from home_control_panel.warning import WarningManager
@@ -23,8 +21,9 @@ from home_control_panel.weather import Weather, WeatherChart, WeatherNext
 logger = logging.getLogger(__name__)
 
 class HomeApp(App):
+    """A textual app that displays train schedules, messages, bus schedules, 
+    weather, and sensor data."""
     BINDINGS: ClassVar[list] = [
-        ("d", "toggle_dark_mode" ,"Toggle dark mode"),
         Binding("q", "quit", "Quit", priority=True),
         ("r", "refresh", "Refresh")
     ]
@@ -38,43 +37,43 @@ class HomeApp(App):
         self._watcher = FileWatcher(self)
 
     def on_mount(self):
+        """Called when the app is mounted. Sets the title and starts 
+        watching for changes in JSON files."""
         self.title = config["title"]
         self._watcher.watch("train_schedule.json")
         self._watcher.watch("train_messages.json")
-        self._watcher.watch("metro_schedule.json")
         self._watcher.watch("bus_schedule.json")
         self._watcher.watch("sensors.json")
         self._watcher.watch("weather.json")
         self._watcher.start()
 
     def compose(self):
-        # yield Header(show_clock=True)
-        yield TrainSchedule(id="schedule")
-        with Horizontal(id="right_panel"):
-            yield TrainStationMessage(id="message")
-            with Vertical(id="transit"):
-                yield MetroSchedule(id="metro")
-                yield BusSchedule(id="bus")
-            yield Lights(id="lights")
-        yield WeatherNext(id="weather_next")
-        yield Sensors(id="sensors")
-        yield WeatherChart(id="weather_chart")
-        yield Weather(id="weather")
-        # yield Footer()
-
-    def action_toggle_dark_mode(self):
-        self.dark = not self.dark
+        """Compose the layout of the app."""
+        with Horizontal(id="top_panel"):
+            yield TrainSchedule(id="schedule")
+            # yield TrainStationMessage(id="message")
+            with Horizontal(id="top_right_panel"):
+                with Vertical(id="top_right_left_panel"):
+                    yield Sensors(id="sensors")
+                    yield BusSchedule(id="bus")
+                with Vertical(id="top_right_right_panel"):
+                    yield Lights(id="lights")
+                    yield WeatherNext(id="weather_next")
+                    yield Weather(id="weather")
+        with Horizontal(id="bottom_panel"):
+            yield WeatherChart(id="weather_chart")
 
     def action_refresh(self):
+        """Refresh the data displayed in the app."""
         self.query_one("#message", TrainStationMessage).refresh_message()
         self.query_one("#schedule", TrainSchedule).refresh_schedule()
-        self.query_one("#metro", MetroSchedule).refresh_metro()
         self.query_one("#bus", BusSchedule).refresh_bus()
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
         self.query_one("#lights", Lights).refresh_lights()
 
 def main():
+    """Main entry point for the Home Control Panel application."""
     logger.info("Starting HomeApp...")
     HomeApp().run()
 

@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 config = load_config()
 REQUEST_TIMEOUT = (3.05, 15)
 
-# TODO: Make the request async.
 url = config["train"]["apiUrl"]
 
 # Check whether the call to API is throttled.

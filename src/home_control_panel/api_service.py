@@ -23,10 +23,7 @@ from home_control_panel.libs.cache import (
     write_cache,
 )
 from home_control_panel.libs.ha_api import api_ha
-from home_control_panel.libs.sl_api import (
-    api_bus_departures,
-    api_metro_departures,
-)
+from home_control_panel.libs.sl_api import api_bus_departures
 from home_control_panel.libs.traffic_api import (
     api_train_announcement,
     api_train_message,
@@ -41,6 +38,7 @@ from home_control_panel.libs.weather_api import api_weather
 logger = logging.getLogger("api_service")
 
 _STATE_FILE = "_api_state.json"
+_SUMMARY_VERSION = 2
 
 
 def _load_state():
@@ -50,6 +48,10 @@ def _load_state():
     state.setdefault("translations", {})
     state.setdefault("station_names", {})
     state.setdefault("stations_updated", None)
+    if state.get("summary_version") != _SUMMARY_VERSION:
+        state["summaries"] = {}
+        state["translations"] = {}
+        state["summary_version"] = _SUMMARY_VERSION
     return state
 
 
@@ -60,6 +62,7 @@ def _save_state(state):
         "translations": state.get("translations", {}),
         "station_names": state.get("station_names", {}),
         "stations_updated": state.get("stations_updated"),
+        "summary_version": state.get("summary_version"),
     }
     write_cache(_STATE_FILE, slim)
 
@@ -241,45 +244,6 @@ def _fetch_weather():
     )
 
 
-def _fetch_metro(state):
-    error, result = api_metro_departures()
-    now = datetime.now(tz=UTC)
-    if error or result is None:
-        logger.warning("Failed to fetch metro departures: %s", error)
-        return
-
-    departures = result.get("departures", [])
-    station_name = result.get("name", "")
-    old_translations = state["translations"]
-    new_texts = []
-    for d in departures:
-        new_texts.extend(d.get("deviations", []))
-
-    untranslated = [t for t in new_texts if t not in old_translations]
-    if untranslated:
-        translated = translate_texts(untranslated)
-        if translated is not None:
-            old_translations.update(translated)
-            logger.info("Translated %d new metro texts", len(translated))
-
-    for d in departures:
-        raw = d.get("deviations", [])
-        d["deviations_tr"] = {t: old_translations.get(t, t) for t in raw}
-
-    write_cache(
-        "metro_schedule.json",
-        {
-            "timestamp": now.isoformat(),
-            "data": {
-                "name": station_name,
-                "departures": departures,
-            },
-        },
-    )
-    logger.info("Metro schedule updated: %d departures", len(departures))
-    return now
-
-
 def _fetch_bus(state):
     error, result = api_bus_departures()
     now = datetime.now(tz=UTC)
@@ -328,7 +292,6 @@ def main():
     weather_interval = config["weather"]["refreshInterval"]
     message_interval = config["train"]["message"]["updateIntervalMin"] * 60
     schedule_interval = config["train"]["apiFreqCheck"]
-    metro_interval = config["sl"]["refreshInterval"]
     bus_interval = config["sl"]["refreshInterval"]
     station_interval = config["train"]["stationUpdateInterval"]
 
@@ -341,7 +304,6 @@ def main():
     last_weather = _jitter(weather_interval)
     last_messages = _jitter(message_interval)
     last_schedule = _jitter(schedule_interval)
-    last_metro = _jitter(metro_interval)
     last_bus = _jitter(bus_interval)
     last_msg_call = datetime.min.replace(tzinfo=UTC)
     last_sched_call = datetime.min.replace(tzinfo=UTC)
@@ -350,6 +312,8 @@ def main():
         if state.get("stations_updated") is None
         else datetime.fromisoformat(state["stations_updated"])
     )
+    if last_stations_check.tzinfo is None:
+        last_stations_check = last_stations_check.replace(tzinfo=UTC)
 
     min_dt = datetime.min.replace(tzinfo=UTC)
 
@@ -399,14 +363,6 @@ def main():
             if result != last_sched_call:
                 last_sched_call = result
             last_schedule = now
-            _save_state(state)
-
-        if (CACHE_DIR / "_trigger_metro").exists():
-            _clear_trigger("_trigger_metro")
-            last_metro = min_dt
-        if (now - last_metro).total_seconds() >= metro_interval:
-            _fetch_metro(state)
-            last_metro = now
             _save_state(state)
 
         if (CACHE_DIR / "_trigger_bus").exists():

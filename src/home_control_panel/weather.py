@@ -79,6 +79,7 @@ def _format_day_label_with_weekday(date, index, weekday_format):
 
 
 class WeatherNext(Static):
+    """Current conditions and daily forecast table (Forecast panel)."""
     _table: DataTable | None = None
 
     def on_mount(self):
@@ -152,6 +153,7 @@ class WeatherNext(Static):
 
 
 class WeatherMetricChart(Canvas):
+    """A single Braille line chart for one or two metrics (e.g. temp + humidity)."""
     def __init__(self, series, ylim, right_ylim=None):
         super().__init__(
             default_hires_mode=HiResMode.BRAILLE,
@@ -333,6 +335,7 @@ class WeatherMetricChart(Canvas):
 
 
 class WeatherChart(Static):
+    """Container for hourly metric charts (temp/humidity and probability panels)."""
     _metrics: list[WeatherMetricChart] | None = None
     _hourly_days: list[dict] | None = None
 
@@ -413,6 +416,8 @@ class WeatherChart(Static):
 
 
 class Weather(Static):
+    """Orchestrator: watches weather.json cache and distributes data to
+    WeatherNext and WeatherChart, handles probability warnings and refresh."""
     CACHE_FILE = "weather.json"
     _weather_next: WeatherNext | None = None
     _weather_chart: WeatherChart | None = None

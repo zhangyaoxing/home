@@ -1,23 +1,48 @@
 Screen {
-    layout: grid;
-    grid-size: 3 3;
-    grid-columns: 25% 55% 20%;
-    grid-rows: 1fr 16 30%;
+    layout: vertical;
+}
+
+#top_panel {
+    width: 100%;
+    height: 40;
 }
 
 #train {
-    layout: horizontal;
-    border: none;
-    column-span: 3;
+    width: 1fr;
+}
+
+#top_right_panel {
+    width: 3fr;
+}
+
+#top_right_left_panel {
+    width: 1.5fr;
     height: 100%;
 }
 
-#schedule {
-    row-span: 2;
+#top_right_right_panel {
+    width: 3fr;
+    height: 100%;
+}
+
+#bottom_panel {
     width: 100%;
+    height: 1fr;
+}
+
+#schedule {
+    width: 1fr;
     height: 100%;
     border: solid greenyellow;
     overflow: hidden;
+}
+
+#message {
+    width: 1fr;
+    height: 100%;
+    border: solid greenyellow;
+    overflow: hidden;
+    padding: 1;
 }
 
 #current_station {
@@ -77,15 +102,6 @@ Screen {
 
 .schedule-message-scroll {
     width: auto;
-}
-
-#message {
-    width: 11fr;
-    overflow: hidden;
-    height: 100%;
-    border: solid greenyellow;
-    padding: 1 1 0 1;
-    display: none;
 }
 
 #notice-toggle {
@@ -153,28 +169,9 @@ SceneCountdownScreen {
     margin-top: 1;
 }
 
-#transit {
-    width: 1fr;
-    height: 100%;
-}
-
-#metro {
-    width: 100%;
-    height: 1.5fr;
-    border: solid greenyellow;
-    overflow: hidden;
-}
-
-#bus {
-    width: 100%;
-    height: 1.5fr;
-    border: solid greenyellow;
-    overflow: hidden;
-}
-
 #lights {
-    width: 3fr;
-    height: 100%;
+    width: 100%;
+    height: 1fr;
     layout: horizontal;
     border: solid greenyellow;
     overflow-x: auto;
@@ -192,6 +189,7 @@ RoomSection {
 }
 
 LightCheckbox {
+    width: 100%;
     color: white;
 }
 
@@ -267,16 +265,22 @@ Checkbox > .toggle--label {
 .light-error {
     color: red;
 }
-
-#right_panel {
-    column-span: 2;
+#bus {
     width: 100%;
-    height: 100%;
+    height: 1fr;
+    border: solid greenyellow;
+    overflow: hidden;
+}
+
+#weather_next {
+    width: 100%;
+    height: 1fr;
+    border: solid greenyellow;
 }
 
 #sensors {
     width: 100%;
-    height: 100%;
+    height: 1fr;
     border: solid greenyellow;
     overflow: hidden;
     padding: 0;
@@ -337,16 +341,9 @@ Rule {
     margin: 0
 }
 
-#weather_next {
-    border: solid greenyellow;
-    width: 100%;
-    height: 100%;
-}
-
 #weather_chart {
     border: solid greenyellow;
     layout: horizontal;
-    column-span: 3;
     width: 100%;
     height: 100%;
 }
