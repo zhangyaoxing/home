@@ -60,6 +60,7 @@ def _save_state(state):
         "summaries": state.get("summaries", {}),
         "translations": state.get("translations", {}),
         "station_names": state.get("station_names", {}),
+        "stock_names": state.get("stock_names", {}),
         "stations_updated": state.get("stations_updated"),
         "summary_version": state.get("summary_version"),
     }

@@ -29,8 +29,8 @@ def api_stock_quotes(state):
     for symbol in symbols:
         try:
             data = client.quote(symbol)
-            current = data.c
-            previous = data.pc
+            current = data["c"]
+            previous = data["pc"]
             if current is None or previous is None or previous == 0:
                 continue
             change = current - previous
@@ -39,8 +39,8 @@ def api_stock_quotes(state):
             if symbol not in names:
                 try:
                     profile = client.company_profile2(symbol=symbol)
-                    if profile.name:
-                        names[symbol] = profile.name
+                    if profile.get("name"):
+                        names[symbol] = profile["name"]
                 except finnhub.FinnhubAPIException:
                     logger.warning("Failed to fetch name for %s", symbol)
 
@@ -53,7 +53,7 @@ def api_stock_quotes(state):
                     "percent_change": percent,
                 }
             )
-        except finnhub.FinnhubAPIException:
+        except Exception:
             logger.warning("Finnhub API failed for %s", symbol, exc_info=True)
             continue
 
