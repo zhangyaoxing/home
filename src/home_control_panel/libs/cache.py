@@ -26,7 +26,7 @@ def write_cache(name, data):
     fd, tmp = tempfile.mkstemp(dir=CACHE_DIR, suffix=".tmp")
     try:
         with os.fdopen(fd, "w") as f:
-            json.dump(data, f, ensure_ascii=False, default=str)
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
         os.replace(tmp, path)
     except Exception:
         os.unlink(tmp)

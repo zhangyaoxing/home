@@ -118,7 +118,7 @@ def summarize_notice(text):
                 "Content-Type": "application/json",
             },
             json={
-                "model": "deepseek-v4-pro",
+                "model": "deepseek-v4-flash",
                 "messages": [
                     {
                         "role": "system",
@@ -130,24 +130,24 @@ def summarize_notice(text):
                     },
                     {"role": "user", "content": text},
                 ],
-                "max_tokens": 120,
+                "max_tokens": 300,
                 "temperature": 0,
             },
             timeout=15,
         )
         result.raise_for_status()
         content = result.json()["choices"][0]["message"]["content"].strip()
-        return content or text
+        return content
     except requests.exceptions.HTTPError:
         logger.warning(
             "DeepSeek summarization failed: HTTP %s — %s",
             result.status_code,
             result.text[:500],
         )
-        return text
+        return ""
     except Exception:
         logger.warning("DeepSeek summarization failed", exc_info=True)
-        return text
+        return ""
 
 
 def translate_texts(texts):

@@ -38,12 +38,11 @@ from home_control_panel.libs.weather_api import api_weather
 logger = logging.getLogger("api_service")
 
 _STATE_FILE = "_api_state.json"
-_SUMMARY_VERSION = 4
+_SUMMARY_VERSION = 5
 
 
 def _load_state():
     state = read_cache(_STATE_FILE) or {}
-    state.setdefault("seen_digests", [])
     state.setdefault("summaries", {})
     state.setdefault("translations", {})
     state.setdefault("station_names", {})
@@ -57,7 +56,6 @@ def _load_state():
 
 def _save_state(state):
     slim = {
-        "seen_digests": state.get("seen_digests", []),
         "summaries": state.get("summaries", {}),
         "translations": state.get("translations", {}),
         "station_names": state.get("station_names", {}),
@@ -173,20 +171,21 @@ def _fetch_messages(state, last_train_call):
 
     messages = data["RESPONSE"]["RESULT"][0].get("TrainStationMessage", [])
     old_summaries = state["summaries"]
-    current_digests = set()
     new_summaries = {}
+    current_digests = set()
     for message in messages:
         text = _normalize_message(message.get("FreeText", ""))
         if not text:
             continue
         digest = hashlib.md5(text.encode()).hexdigest()
         current_digests.add(digest)
-        if digest not in old_summaries:
-            new_summaries[digest] = summarize_notice(text)
+        if digest not in old_summaries and digest not in new_summaries:
+            summary = summarize_notice(text)
+            if summary:
+                new_summaries[digest] = summary
 
-    state["seen_digests"] = list(current_digests)
-    # Drop summaries for messages no longer in the API response.
-    state["summaries"] = {d: s for d, s in old_summaries.items() if d in current_digests}
+    # Keep only active messages; merge new translations.
+    state["summaries"] = {d: old_summaries[d] for d in current_digests if d in old_summaries}
     state["summaries"].update(new_summaries)
 
     enriched = []
@@ -197,6 +196,7 @@ def _fetch_messages(state, last_train_call):
         digest = hashlib.md5(text.encode()).hexdigest()
         enriched.append(
             {
+                "digest": digest,
                 "raw": message,
                 "summary": state["summaries"].get(digest, text),
             }

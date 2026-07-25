@@ -74,7 +74,7 @@ class TrainStationMessage(Static):
             self.remove_children()
             for entry in messages:
                 message = entry["raw"]
-                display_text = entry["summary"]
+                display_text = entry["summary"] or _normalize_message(message.get("FreeText", ""))
                 status_class = "lag" if message.get("Status") == "Lag" else "normal"
                 self.mount(
                     ScrollingLabel(
@@ -369,7 +369,7 @@ class NoticesScreen(ModalScreen):
         container.remove_children()
         for entry in messages:
             message = entry["raw"]
-            display_text = entry["summary"]
+            display_text = entry["summary"] or _normalize_message(message.get("FreeText", ""))
             status_class = "lag" if message.get("Status") == "Lag" else "normal"
             container.mount(
                 ScrollingLabel(display_text, classes=status_class)
