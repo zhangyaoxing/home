@@ -24,6 +24,7 @@ from home_control_panel.libs.cache import (
 )
 from home_control_panel.libs.ha_api import api_ha
 from home_control_panel.libs.sl_api import api_bus_departures
+from home_control_panel.libs.stock_api import api_stock_quotes
 from home_control_panel.libs.traffic_api import (
     api_train_announcement,
     api_train_message,
@@ -289,6 +290,24 @@ def _fetch_bus(state):
     return now
 
 
+def _fetch_stocks():
+    error, quotes = api_stock_quotes()
+    now = datetime.now(tz=UTC)
+    if error:
+        logger.warning("Failed to fetch stock quotes: %s", error)
+        return
+    if quotes is None:
+        return
+    write_cache(
+        "stocks.json",
+        {
+            "timestamp": now.isoformat(),
+            "data": {"quotes": quotes},
+        },
+    )
+    logger.info("Stocks updated: %d quotes", len(quotes))
+
+
 def main():
     logger.info("API service starting...")
 
@@ -299,6 +318,7 @@ def main():
     message_interval = config["train"]["message"]["updateIntervalMin"] * 60
     schedule_interval = config["train"]["apiFreqCheck"]
     bus_interval = config["sl"]["refreshInterval"]
+    stock_interval = config["stocks"]["refreshInterval"]
     station_interval = config["train"]["stationUpdateInterval"]
 
     now = datetime.now(tz=UTC)
@@ -311,6 +331,7 @@ def main():
     last_messages = _jitter(message_interval)
     last_schedule = _jitter(schedule_interval)
     last_bus = _jitter(bus_interval)
+    last_stocks = _jitter(stock_interval)
     last_msg_call = datetime.min.replace(tzinfo=UTC)
     last_sched_call = datetime.min.replace(tzinfo=UTC)
     last_stations_check = (
@@ -378,6 +399,13 @@ def main():
             _fetch_bus(state)
             last_bus = now
             _save_state(state)
+
+        if (CACHE_DIR / "_trigger_stocks").exists():
+            _clear_trigger("_trigger_stocks")
+            last_stocks = min_dt
+        if (now - last_stocks).total_seconds() >= stock_interval:
+            _fetch_stocks()
+            last_stocks = now
 
         time.sleep(1)
 

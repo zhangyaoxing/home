@@ -16,6 +16,7 @@ from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config
 from home_control_panel.lights import Lights
 from home_control_panel.sensors import Sensors
+from home_control_panel.stock import StockQuote
 from home_control_panel.train import TrainSchedule, TrainStationMessage
 from home_control_panel.warning import WarningManager
 from home_control_panel.weather import Weather, WeatherChart, WeatherNext
@@ -47,6 +48,7 @@ class HomeApp(App):
         self._watcher.watch("bus_schedule.json")
         self._watcher.watch("sensors.json")
         self._watcher.watch("weather.json")
+        self._watcher.watch("stocks.json")
         self._watcher.start()
 
     def compose(self):
@@ -63,6 +65,7 @@ class HomeApp(App):
                     yield WeatherNext(id="weather_next")
                     yield Weather(id="weather")
         with Horizontal(id="bottom_panel"):
+            yield StockQuote(id="stocks")
             yield WeatherChart(id="weather_chart")
 
     def action_refresh(self):
@@ -73,6 +76,7 @@ class HomeApp(App):
         self.query_one("#weather", Weather).refresh_data()
         self.query_one("#sensors", Sensors).refresh_data()
         self.query_one("#lights", Lights).refresh_lights()
+        self.query_one("#stocks", StockQuote).refresh_stocks()
 
 def main():
     """Main entry point for the Home Control Panel application."""

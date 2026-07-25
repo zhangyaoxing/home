@@ -71,6 +71,10 @@
       70
     ]
   },
+  "stocks": {
+    "symbols": ["NVDA"],
+    "refreshInterval": 60
+  },
   "homeassistant": {
     "apiUrl": "http://homeassistant.local:8123",
     "sensorRefreshInterval": 60,

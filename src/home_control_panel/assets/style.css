@@ -272,6 +272,28 @@ Checkbox > .toggle--label {
     overflow: hidden;
 }
 
+#stocks {
+    width: 1fr;
+    height: 100%;
+    border: solid greenyellow;
+    overflow: hidden;
+}
+
+.stock-row {
+    height: 1;
+}
+
+.stock-symbol {
+    width: auto;
+    color: white;
+    text-style: bold;
+}
+
+.stock-price {
+    width: 1fr;
+    text-align: right;
+}
+
 #weather_next {
     width: 100%;
     height: 4fr;
@@ -344,7 +366,7 @@ Rule {
 #weather_chart {
     border: solid greenyellow;
     layout: horizontal;
-    width: 100%;
+    width: 3fr;
     height: 100%;
 }
 

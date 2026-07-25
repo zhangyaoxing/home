@@ -39,6 +39,7 @@ config["haKey"] = config.get("haKey", os.environ.get("haKey", None))
 config["dsKey"] = config.get("dsKey", os.environ.get("dsKey", None))
 config["gcpKey"] = config.get("gcpKey", os.environ.get("gcpKey", None))
 config["slKey"] = config.get("slKey", os.environ.get("slKey", None))
+config["finnhubKey"] = config.get("finnhubKey", os.environ.get("finnhubKey", None))
 if config["trainKey"] is None:
     print(yellow("Train API key is not configured."))
     sys.exit()
