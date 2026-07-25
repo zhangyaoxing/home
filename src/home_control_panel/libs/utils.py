@@ -1,9 +1,11 @@
-import os
 import json
 import logging
+import os
+import sys
 from inspect import getsourcefile
 from os.path import abspath, dirname
 from pathlib import Path
+
 
 def color_code(code): return f"\x1b[{code}m"
 def colorize(code: int, s: str) -> str: return f"{color_code(code)}{str(s).replace(color_code(0), color_code(code))}{color_code(0)}"
@@ -39,13 +41,12 @@ config["gcpKey"] = config.get("gcpKey", os.environ.get("gcpKey", None))
 config["slKey"] = config.get("slKey", os.environ.get("slKey", None))
 if config["trainKey"] is None:
     print(yellow("Train API key is not configured."))
-    exit()
+    sys.exit()
 if config["haKey"] is None:
     print(yellow("Homeassistant API key is not configured."))
-    exit()
+    sys.exit()
 
 def load_config():
-    global config
     return config
 
 levels = logging._nameToLevel
@@ -61,4 +62,4 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-logger.info("Log level: %s" % config["logLevel"])
+logger.info("Log level: {}".format(config["logLevel"]))

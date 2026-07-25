@@ -9,21 +9,25 @@ import logging
 import os
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from dotenv import load_dotenv
 
-load_dotenv()  # noqa: E402
+load_dotenv()
 
 os.environ["LOG_FILE"] = "api-service.log"
 
-from home_control_panel.libs.cache import (  # noqa: E402
+from home_control_panel.libs.cache import (
     CACHE_DIR,
     read_cache,
     write_cache,
 )
-from home_control_panel.libs.ha_api import api_ha  # noqa: E402
-from home_control_panel.libs.traffic_api import (  # noqa: E402
+from home_control_panel.libs.ha_api import api_ha
+from home_control_panel.libs.sl_api import (
+    api_bus_departures,
+    api_metro_departures,
+)
+from home_control_panel.libs.traffic_api import (
     api_train_announcement,
     api_train_message,
     api_train_stations,
@@ -31,9 +35,8 @@ from home_control_panel.libs.traffic_api import (  # noqa: E402
     summarize_notice,
     translate_texts,
 )
-from home_control_panel.libs.sl_api import api_bus_departures, api_metro_departures  # noqa: E402
-from home_control_panel.libs.utils import config  # noqa: E402
-from home_control_panel.libs.weather_api import api_weather  # noqa: E402
+from home_control_panel.libs.utils import config
+from home_control_panel.libs.weather_api import api_weather
 
 logger = logging.getLogger("api_service")
 
@@ -91,7 +94,7 @@ def _fetch_stations(state):
     for s in data["RESPONSE"]["RESULT"][0]["TrainStation"]:
         stations[s["LocationSignature"]] = s["AdvertisedLocationName"]
     state["station_names"] = stations
-    state["stations_updated"] = datetime.now().isoformat()
+    state["stations_updated"] = datetime.now(tz=UTC).isoformat()
     logger.info("Stations updated: %d entries", len(stations))
 
 
@@ -99,7 +102,7 @@ def _fetch_schedule(state, last_train_call):
     if is_freq_throttled(last_train_call):
         return last_train_call
     error, data = api_train_announcement()
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     if error or not data:
         logger.warning("Failed to fetch train schedule: %s", error)
         return last_train_call
@@ -156,7 +159,7 @@ def _fetch_messages(state, last_train_call):
     if is_freq_throttled(last_train_call):
         return last_train_call
     error, data = api_train_message()
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     if error or not data:
         logger.warning("Failed to fetch train messages: %s", error)
         return last_train_call
@@ -217,7 +220,7 @@ def _fetch_sensors():
         return
     write_cache(
         "sensors.json",
-        {"timestamp": datetime.now().isoformat(), "data": data},
+        {"timestamp": datetime.now(tz=UTC).isoformat(), "data": data},
     )
     logger.info("Sensors updated: %d entities", len(data["sensors"]))
 
@@ -229,7 +232,7 @@ def _fetch_weather():
         return
     write_cache(
         "weather.json",
-        {"timestamp": datetime.now().isoformat(), "data": data},
+        {"timestamp": datetime.now(tz=UTC).isoformat(), "data": data},
     )
     logger.info(
         "Weather updated: %d days, %d hourly details",
@@ -240,10 +243,10 @@ def _fetch_weather():
 
 def _fetch_metro(state):
     error, result = api_metro_departures()
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     if error or result is None:
         logger.warning("Failed to fetch metro departures: %s", error)
-        return last_call
+        return
 
     departures = result.get("departures", [])
     station_name = result.get("name", "")
@@ -279,10 +282,10 @@ def _fetch_metro(state):
 
 def _fetch_bus(state):
     error, result = api_bus_departures()
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     if error or result is None:
         logger.warning("Failed to fetch bus departures: %s", error)
-        return last_call
+        return
 
     departures = result.get("departures", [])
     station_name = result.get("name", "")
@@ -329,7 +332,7 @@ def main():
     bus_interval = config["sl"]["refreshInterval"]
     station_interval = config["train"]["stationUpdateInterval"]
 
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
 
     def _jitter(interval):
         return now - timedelta(seconds=interval - random.uniform(0, 5))
@@ -340,20 +343,22 @@ def main():
     last_schedule = _jitter(schedule_interval)
     last_metro = _jitter(metro_interval)
     last_bus = _jitter(bus_interval)
-    last_msg_call = datetime.min
-    last_sched_call = datetime.min
+    last_msg_call = datetime.min.replace(tzinfo=UTC)
+    last_sched_call = datetime.min.replace(tzinfo=UTC)
     last_stations_check = (
         _jitter(station_interval)
         if state.get("stations_updated") is None
         else datetime.fromisoformat(state["stations_updated"])
     )
 
+    min_dt = datetime.min.replace(tzinfo=UTC)
+
     while True:
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
 
         if (CACHE_DIR / "_trigger_sensors").exists():
             _clear_trigger("_trigger_sensors")
-            last_sensors = datetime.min
+            last_sensors = min_dt
 
         if (now - last_sensors).total_seconds() >= sensor_interval:
             _fetch_sensors()
@@ -361,7 +366,7 @@ def main():
 
         if (CACHE_DIR / "_trigger_weather").exists():
             _clear_trigger("_trigger_weather")
-            last_weather = datetime.min
+            last_weather = min_dt
 
         if (now - last_weather).total_seconds() >= weather_interval:
             _fetch_weather()
@@ -374,8 +379,8 @@ def main():
 
         if (CACHE_DIR / "_trigger_train_messages").exists():
             _clear_trigger("_trigger_train_messages")
-            last_messages = datetime.min
-            last_msg_call = datetime.min
+            last_messages = min_dt
+            last_msg_call = min_dt
 
         if (now - last_messages).total_seconds() >= message_interval:
             result = _fetch_messages(state, last_msg_call)
@@ -386,8 +391,8 @@ def main():
 
         if (CACHE_DIR / "_trigger_train_schedule").exists():
             _clear_trigger("_trigger_train_schedule")
-            last_schedule = datetime.min
-            last_sched_call = datetime.min
+            last_schedule = min_dt
+            last_sched_call = min_dt
 
         if (now - last_schedule).total_seconds() >= schedule_interval:
             result = _fetch_schedule(state, last_sched_call)
@@ -398,7 +403,7 @@ def main():
 
         if (CACHE_DIR / "_trigger_metro").exists():
             _clear_trigger("_trigger_metro")
-            last_metro = datetime.min
+            last_metro = min_dt
         if (now - last_metro).total_seconds() >= metro_interval:
             _fetch_metro(state)
             last_metro = now
@@ -406,7 +411,7 @@ def main():
 
         if (CACHE_DIR / "_trigger_bus").exists():
             _clear_trigger("_trigger_bus")
-            last_bus = datetime.min
+            last_bus = min_dt
         if (now - last_bus).total_seconds() >= bus_interval:
             _fetch_bus(state)
             last_bus = now

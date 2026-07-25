@@ -1,5 +1,7 @@
 from textual.widgets import Label
+
 from home_control_panel.libs.utils import config
+
 
 class ScrollingLabel(Label):
     def __init__(self, *args, **kwargs):

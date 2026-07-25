@@ -1,6 +1,8 @@
+import itertools
 import logging
 import time
-from datetime import datetime as dt, timedelta
+from datetime import UTC, timedelta
+from datetime import datetime as dt
 
 from rich.text import Text
 from textual.widgets import DataTable, Static
@@ -45,25 +47,23 @@ def _fmt_prob(value):
 
 
 def _fmt_temp(t):
-    return "{t:05.2f}\u00b0C".format(t=t)
+    return f"{t:05.2f}\u00b0C"
 
 
 def _fmt_hum(h):
-    return "{h:2.0f}%".format(h=h)
+    return f"{h:2.0f}%"
 
 
 def _fmt_wind(speed, gust, wdir):
-    return "{dir} {speed:04.1f} / {gust:04.1f} km/h".format(
-        dir=winddir(wdir), speed=speed, gust=gust
-    )
+    return f"{winddir(wdir)} {speed:04.1f} / {gust:04.1f} km/h"
 
 
 def _fmt_cloud(c):
-    return "{c:3.0f}%".format(c=c)
+    return f"{c:3.0f}%"
 
 
 def _fmt_vis(v):
-    return "{v:04.1f} km".format(v=v)
+    return f"{v:04.1f} km"
 
 
 def _format_forecast_day_label(date, index):
@@ -75,7 +75,7 @@ def _format_day_label_with_weekday(date, index, weekday_format):
         return "Today"
     if not date:
         return ""
-    return f"{dt.strptime(date, '%Y-%m-%d').strftime(weekday_format)} +{index}"
+    return f"{dt.strptime(date, '%Y-%m-%d').replace(tzinfo=UTC).strftime(weekday_format)} +{index}"
 
 
 class WeatherNext(Static):
@@ -287,7 +287,7 @@ class WeatherMetricChart(Canvas):
 
                 lines = [
                     (x0, y0, x1, y1)
-                    for (x0, y0), (x1, y1) in zip(points, points[1:])
+                    for (x0, y0), (x1, y1) in itertools.pairwise(points)
                 ]
                 self.draw_hires_lines(lines, hires_mode=HiResMode.BRAILLE, style=s["style"])
 
@@ -388,7 +388,7 @@ class WeatherChart(Static):
             if day_index == 0:
                 day_name = "Today"
             elif date:
-                day_name = dt.strptime(date, "%Y-%m-%d").strftime("%a")
+                day_name = dt.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC).strftime("%a")
             else:
                 day_name = ""
             hours = day.get("hours", [])
@@ -512,7 +512,7 @@ class Weather(Static):
                     forecast_time = dt.fromisoformat(time_str)
                 except ValueError:
                     continue
-                now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now()
+                now = dt.now(forecast_time.tzinfo) if forecast_time.tzinfo else dt.now(tz=UTC)
                 window_end = now + timedelta(hours=hours)
                 if now <= forecast_time <= window_end and value > max_value:
                     max_value = value

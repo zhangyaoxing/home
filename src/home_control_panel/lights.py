@@ -1,14 +1,15 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import ClassVar
 
 import pyfiglet
 from rich.markup import escape
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, RadioSet, RadioButton, Static
-from textual import work
 from textual.message import Message
+from textual.screen import ModalScreen
+from textual.widgets import Button, Checkbox, RadioButton, RadioSet, Static
 
 from home_control_panel.libs.ha_api import (
     api_ha_activate_scene,
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class LightCheckbox(Checkbox):
     """A checkbox wired to toggle a Home Assistant light entity."""
 
-    def __init__(self, entity_id, label, state, *args, **kwargs):
+    def __init__(self, entity_id, label, state, **kwargs):
         self._toggling = False
         state_class = "light-on" if state == "on" else "light-off"
         classes = kwargs.pop("classes", "")
@@ -32,7 +33,6 @@ class LightCheckbox(Checkbox):
             label,
             value=(state == "on"),
             classes=merged,
-            *args,
             **kwargs,
         )
         self.can_focus = False
@@ -69,8 +69,7 @@ class RoomSection(Vertical):
         self._checkboxes = checkboxes
 
     def compose(self) -> ComposeResult:
-        for cb in self._checkboxes:
-            yield cb
+        yield from self._checkboxes
 
     def on_mount(self):
         self.border_title = self.room_data["area"]
@@ -88,7 +87,7 @@ class SceneButton(Button):
 class SceneSection(Vertical):
     """A bordered section showing scenes as clickable buttons."""
 
-    _DELAY_MAP = {"delay-now": 0, "delay-30s": 30, "delay-60s": 60}
+    _DELAY_MAP: ClassVar[dict] = {"delay-now": 0, "delay-30s": 30, "delay-60s": 60}
 
     def __init__(self, scenes_data, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -182,7 +181,7 @@ class SceneCountdownScreen(ModalScreen):
         try:
             self.query_one("#sc-time", Static).update(self._figlet_text())
         except Exception:
-            pass
+            logger.debug("Failed to refresh scene countdown time", exc_info=True)
 
     def _blink_toggle(self):
         self._blink_on = not self._blink_on
@@ -287,7 +286,7 @@ class Lights(Static):
             if not changed:
                 return
 
-        self._last_fetch_at = datetime.now()
+        self._last_fetch_at = datetime.now(tz=UTC)
         self.set_loading(False)
 
     @work(thread=True, exclusive=True)

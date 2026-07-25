@@ -1,12 +1,17 @@
+import logging
+from typing import ClassVar
+
 WARNING_CLASSES = {
     1: "panel-warning-level1",
     2: "panel-warning-level2",
     3: "panel-warning-active",
 }
 
+logger = logging.getLogger(__name__)
+
 
 class WarningManager:
-    TARGETS = {
+    TARGETS: ClassVar[dict] = {
         "sensors": "#sensors",
         "weather": "#weather_next",
     }
@@ -51,6 +56,7 @@ class WarningManager:
             try:
                 target = self._app.query_one(selector)
             except Exception:
+                logger.debug("Warning target %s not found", selector, exc_info=True)
                 continue
             css_class = WARNING_CLASSES.get(level, WARNING_CLASSES[3])
             target.add_class(css_class)
@@ -63,6 +69,7 @@ class WarningManager:
             try:
                 target = self._app.query_one(selector)
             except Exception:
+                logger.debug("Warning target %s not found", selector, exc_info=True)
                 continue
             for cls in WARNING_CLASSES.values():
                 target.remove_class(cls)
@@ -72,6 +79,7 @@ class WarningManager:
             try:
                 target = self._app.query_one(selector)
             except Exception:
+                logger.debug("Warning target %s not found", selector, exc_info=True)
                 continue
             for cls in WARNING_CLASSES.values():
                 target.remove_class(cls)

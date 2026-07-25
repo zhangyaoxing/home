@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from typing import ClassVar
 
 from dotenv import load_dotenv
 
@@ -9,9 +10,9 @@ from textual.app import App
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 
+from home_control_panel.bus import BusSchedule
 from home_control_panel.libs.cache import FileWatcher
 from home_control_panel.libs.utils import config
-from home_control_panel.bus import BusSchedule
 from home_control_panel.lights import Lights
 from home_control_panel.metro import MetroSchedule
 from home_control_panel.sensors import Sensors
@@ -22,7 +23,7 @@ from home_control_panel.weather import Weather, WeatherChart, WeatherNext
 logger = logging.getLogger(__name__)
 
 class HomeApp(App):
-    BINDINGS = [
+    BINDINGS: ClassVar[list] = [
         ("d", "toggle_dark_mode" ,"Toggle dark mode"),
         Binding("q", "quit", "Quit", priority=True),
         ("r", "refresh", "Refresh")

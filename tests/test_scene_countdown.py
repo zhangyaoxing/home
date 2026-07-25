@@ -72,7 +72,6 @@ def test_finish_with_apply_calls_dismiss_true():
     # Intercept dismiss to capture the result
     def capture_dismiss(result=None):
         captured.append(result)
-        return None
 
     screen.dismiss = capture_dismiss  # type: ignore[method-assign]
 
@@ -96,7 +95,6 @@ def test_finish_with_cancel_calls_dismiss_false():
 
     def capture_dismiss(result=None):
         captured.append(result)
-        return None
 
     screen.dismiss = capture_dismiss  # type: ignore[method-assign]
 
@@ -120,7 +118,6 @@ def test_finish_is_idempotent():
 
     def capture_dismiss(result=None):
         captured.append(result)
-        return None
 
     screen.dismiss = capture_dismiss  # type: ignore[method-assign]
 
@@ -165,7 +162,6 @@ def test_tick_at_zero_triggers_apply():
 
     def capture_dismiss(result=None):
         captured.append(result)
-        return None
 
     screen.dismiss = capture_dismiss  # type: ignore[method-assign]
 

@@ -1,7 +1,9 @@
-import requests
 import logging
+from datetime import UTC, datetime
+
+import requests
+
 from home_control_panel.libs.utils import load_config
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 config = load_config()
@@ -14,7 +16,7 @@ url = config["train"]["apiUrl"]
 # True: Yes (Shouldn't call API)
 # False: No (You can call API)
 def is_freq_throttled(last_call_time):
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     hour = now.hour
     cfg = next(
         cfg
@@ -42,7 +44,8 @@ def api_request(body):
             return None, json
         else:
             return Exception("Error accessing API."), None
-    except BaseException as error:
+    except requests.exceptions.RequestException as error:
+        logger.warning("API request failed: %s", error)
         return error, None
 
 def api_train_stations():
