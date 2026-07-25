@@ -290,8 +290,8 @@ def _fetch_bus(state):
     return now
 
 
-def _fetch_stocks():
-    error, quotes = api_stock_quotes()
+def _fetch_stocks(state):
+    error, quotes = api_stock_quotes(state)
     now = datetime.now(tz=UTC)
     if error:
         logger.warning("Failed to fetch stock quotes: %s", error)
@@ -404,8 +404,9 @@ def main():
             _clear_trigger("_trigger_stocks")
             last_stocks = min_dt
         if (now - last_stocks).total_seconds() >= stock_interval:
-            _fetch_stocks()
+            _fetch_stocks(state)
             last_stocks = now
+            _save_state(state)
 
         time.sleep(1)
 

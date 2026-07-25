@@ -57,11 +57,12 @@ class StockQuote(Static):
                     change = quote["change"]
                     pct = quote["percent_change"]
                     symbol = quote["symbol"]
+                    name = quote.get("name", symbol)
                     color = "green" if change >= 0 else "red"
                     sign = "+" if change >= 0 else ""
                     self.mount(
                         Horizontal(
-                            Static(escape(symbol), classes="stock-symbol"),
+                            Static(escape(name), classes="stock-symbol"),
                             Static(
                                 f"[{color}]{price:.2f}  ({sign}{change:.2f} / {sign}{pct:.2f}%)[/]",
                                 classes="stock-price",

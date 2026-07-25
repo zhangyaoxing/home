@@ -72,7 +72,7 @@
     ]
   },
   "stocks": {
-    "symbols": ["NVDA"],
+    "symbols": ["NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "MDB", "EQQQ.DE", "VOLV_B", "SHB_B"],
     "refreshInterval": 60
   },
   "homeassistant": {
