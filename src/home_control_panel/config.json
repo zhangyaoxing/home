@@ -101,7 +101,7 @@
         "sensor.desk_motion_sensor_humidity",
         "sensor.bed_temp_hum_humidity",
         "sensor.wen_shi_du_chuan_gan_qi_humidity",
-        "sensor.sensor.wen_shi_du_chuan_gan_qi_2_humidity"
+        "sensor.wen_shi_du_chuan_gan_qi_2_humidity"
       ],
       "plant_hum": [
         "sensor.plant_humidity_1_humidity",
