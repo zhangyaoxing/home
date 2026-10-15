@@ -115,7 +115,7 @@
     "areas": {
       "Work Corner": [
         "switch.desk_light_switch_l3",
-        "switch.jia_shi_qi_socket_1"
+        "switch.jia_shi_qi_2_socket_1"
       ],
       "Living Room": [
         "switch.living_room_ceiling_lamp",
@@ -128,11 +128,10 @@
       ]
     },
     "scenes": [
-      "scene.cinema",
-      "scene.evening",
-      "scene.day",
-      "scene.night",
-      "scene.good_night"
+      "scene.bright_mode",
+      "scene.dark_mode",
+      "scene.bedtime",
+      "scene.evening"
     ]
   }
 }
